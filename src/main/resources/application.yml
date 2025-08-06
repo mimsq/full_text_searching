@@ -1,0 +1,22 @@
+spring:
+  profiles:
+    active: dev
+
+
+  elasticsearch:
+    uris: http://localhost:9200
+    username: #elastic
+    password: #your-es-password
+
+
+  datasource:
+    url: #jdbc:mysql://localhost:3306/knowledge_base
+    username: #root
+    password: #your-db-password
+
+
+minio:
+  url: #http://localhost:9000
+  access-key: #minioadmin
+  secret-key: #minioadmin
+  bucket: #knowledge-files
