@@ -2,18 +2,24 @@ spring:
   profiles:
     active: dev
 
-
   elasticsearch:
     uris: http://localhost:9200
     username: #elastic
     password: #your-es-password
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
   datasource:
     url: #jdbc:mysql://localhost:3306/knowledge_base
     username: #root
     password: #your-db-password
 
+logging:
+  level:
+    org.springframework.data.elasticsearch: DEBUG
 
 minio:
   url: #http://localhost:9000
