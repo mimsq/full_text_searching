@@ -81,7 +81,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     }
 
     @Override
-    public TKnowledgeDocument saveDocument(TKnowledgeDocument tKnowledgeDocument) {
+    public TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument) {
         if (this.save(tKnowledgeDocument)){
             try{
                 Long id = tKnowledgeDocument.getId();

@@ -33,12 +33,13 @@ public class TKnowledgeDocumentController {
         }
 
     }
-    @PostMapping
-    public TKnowledgeDocument saveDocument(@RequestBody TKnowledgeDocument tKnowledgeDocument){
+    @PutMapping
+    public TKnowledgeDocument updateDocument(@RequestBody TKnowledgeDocument tKnowledgeDocument){
 
 
-        return tKnowledgeDocumentService.saveDocument(tKnowledgeDocument);
+        return tKnowledgeDocumentService.updateDocument(tKnowledgeDocument);
     }
+
 
     @GetMapping("/{id}")
     public TKnowledgeDocument getTKnowledgeDocument(@PathVariable Long id){

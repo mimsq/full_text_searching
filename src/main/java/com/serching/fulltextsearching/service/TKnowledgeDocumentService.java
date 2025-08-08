@@ -14,5 +14,5 @@ public interface TKnowledgeDocumentService extends IService<TKnowledgeDocument> 
 
     TKnowledgeDocument uploadDocument (MultipartFile file) throws IOException;
 
-    TKnowledgeDocument saveDocument(TKnowledgeDocument tKnowledgeDocument);
+    TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument);
 }
