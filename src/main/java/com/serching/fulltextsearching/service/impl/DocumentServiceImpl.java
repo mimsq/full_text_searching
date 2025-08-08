@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
@@ -42,19 +44,43 @@ public class DocumentServiceImpl implements DocumentService {
     
     @Override
     public DocumentEntity saveDocument(MultipartFile file) throws IOException {
-        // 使用 Tika 提取文本内容
-        String content = extractText(file.getInputStream());
+        //生成唯一文件名
+        String filename = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        //定义保存路径(可根据需要修改)
+        String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
+        //保存文件到本地路径
+        File localFile = new File(filePath);
+        file.transferTo(localFile);
+        try{
+            //使用tika提取指定路径下的文件
+            String content = extractTextFromPath(filePath);
+
+            //创建文档实体...
+            DocumentEntity document = new DocumentEntity();
+
+            return documentRepository.save(document);
+        }finally {
+            //可选:删除临时文件
+            if (localFile.exists()){
+                localFile.delete();
+            }
+        }
         
-        // 创建文档实体
-        DocumentEntity document = new DocumentEntity();
-        document.setId(UUID.randomUUID().toString());
-        document.setContent(content);
-        document.setFilename(file.getOriginalFilename());
-        document.setContentType(file.getContentType());
-        document.setCreatedDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        
-        // 保存到 Elasticsearch
-        return documentRepository.save(document);
+
+
+    }
+    /**
+     * 从文件路径提取文本内容
+     * @param filePath 文件路径
+     * @return 提取的文本内容
+     * @throws IOException IO异常
+     */
+    public String extractTextFromPath(String filePath) throws IOException {
+        try (InputStream inputStream = new FileInputStream(filePath)) {
+            return tika.parseToString(inputStream);
+        } catch (Exception e) {
+            throw new IOException("解析文档时发生错误: " + filePath, e);
+        }
     }
     
     @Override
