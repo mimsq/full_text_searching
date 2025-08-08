@@ -82,13 +82,15 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
     @Override
     public TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument) {
-        if (this.save(tKnowledgeDocument)){
+        // 使用updateById方法而不是save方法来更新文档
+        boolean isUpdated = this.updateById(tKnowledgeDocument);
+        if (isUpdated) {
             try{
                 Long id = tKnowledgeDocument.getId();
                 ESKnowledgeDocument esDocument = new ESKnowledgeDocument(id+"",tKnowledgeDocument.getTitle(),tKnowledgeDocument.getContent());
                 tKnowledgeDocumentRepository.save(esDocument);
             }catch (Exception e){
-                throw new RuntimeException("文档保存失败:"+e.getMessage(),e);
+                throw new RuntimeException("文档更新失败:"+e.getMessage(),e);
             }
             return tKnowledgeDocument;
         }

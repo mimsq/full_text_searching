@@ -42,9 +42,11 @@ public class TKnowledgeDocumentController {
 
 
     @GetMapping("/{id}")
-    public TKnowledgeDocument getTKnowledgeDocument(@PathVariable Long id){
+    public TKnowledgeDocument getDocument(@PathVariable Long id){
         return tKnowledgeDocumentService.getById(id);
     }
 
+    @PostMapping
+    public TKnowledgeDocument createDocument()
 
 }
