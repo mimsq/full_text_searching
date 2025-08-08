@@ -2,9 +2,7 @@ package com.serching.fulltextsearching.utils;
 
 import org.apache.tika.Tika;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 public class DocumentTools {
 
@@ -27,5 +25,17 @@ public class DocumentTools {
         return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
     }
 
+    /**
+     * 创建文本文件并写入内容
+     * @param filePath 文件路径
+     * @param content 文件内容
+     * @throws IOException IO异常
+     */
+    public void createTextFile(String filePath, String content) throws IOException {
+        File file = new File(filePath);
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write(content != null ? content : "");
+        }
+    }
 
 }

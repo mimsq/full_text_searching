@@ -21,7 +21,9 @@ public class TKnowledgeDocumentController {
     @Autowired
     private TKnowledgeDocumentRepository tKnowledgeDocumentRepository;
 
+
     private static final Logger logger = LoggerFactory.getLogger(TKnowledgeDocumentController.class);
+
 
     @PostMapping("/upload")
     public TKnowledgeDocument uploadDocument(@RequestParam("file") MultipartFile documentFile){
@@ -47,6 +49,15 @@ public class TKnowledgeDocumentController {
     }
 
     @PostMapping
-    public TKnowledgeDocument createDocument()
+    public TKnowledgeDocument createDocument(@RequestBody TKnowledgeDocument tKnowledgeDocument){
+        logger.info("创建文档: title={}", tKnowledgeDocument.getTitle());
+        return tKnowledgeDocumentService.createDocument(tKnowledgeDocument);
+    }
+
+    @DeleteMapping("/{id}")
+    public boolean deleteDocument(@PathVariable Long id){
+        logger.info("删除文档: id={}", id);
+        return tKnowledgeDocumentService.deleteDocument(id);
+    }
 
 }

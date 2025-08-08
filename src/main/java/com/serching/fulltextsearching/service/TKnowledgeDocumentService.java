@@ -1,10 +1,7 @@
 package com.serching.fulltextsearching.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
-import com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper;
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -15,4 +12,18 @@ public interface TKnowledgeDocumentService extends IService<TKnowledgeDocument> 
     TKnowledgeDocument uploadDocument (MultipartFile file) throws IOException;
 
     TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument);
+    
+    /**
+     * 创建新的文档并生成对应的txt文件
+     * @param tKnowledgeDocument 文档对象
+     * @return 创建成功的文档对象
+     */
+    TKnowledgeDocument createDocument(TKnowledgeDocument tKnowledgeDocument);
+    
+    /**
+     * 删除文档，同时删除MySQL和Elasticsearch中的数据
+     * @param id 文档ID
+     * @return 是否删除成功
+     */
+    boolean deleteDocument(Long id);
 }
