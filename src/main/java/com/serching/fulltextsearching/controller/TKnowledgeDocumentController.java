@@ -1,6 +1,7 @@
 package com.serching.fulltextsearching.controller;
 
 import com.serching.fulltextsearching.common.Result;
+import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.exception.BusinessException;
 import com.serching.fulltextsearching.service.TKnowledgeDocumentService;
@@ -27,13 +28,19 @@ public class TKnowledgeDocumentController {
     @Autowired
     private TKnowledgeDocumentService tKnowledgeDocumentService;
 
-    @PostMapping("/upload")
-    @Operation(summary = "上传文档", description = "上传文件并解析内容保存为知识文档")
+    @PostMapping(value = "/upload",consumes = "multipart/form-data")
+    @Operation(summary = "上传文件创建文档(绑定知识库/可选分组)", description = "file: 仅支持 .txt/.md; knowledgeBase: JSON; categoryId: 可选")
     public Result<TKnowledgeDocument> uploadDocument(
-            @Parameter(description = "要上传的文件", required = true)
-            @RequestParam("file") @NotNull(message = "文件不能为空") MultipartFile documentFile) {
+            @Parameter(description = "知识库实体(JSON)，至少包含 id", required = true)
+            @RequestPart("knowledgeBase") @Valid TKnowledgeBase knowledgeBase,
+            @Parameter(description = "知识库分组ID(可选)")
+            @RequestPart(value = "categoryId", required = false) Long categoryId,
+            @Parameter(description = "要上传的文件，仅支持 .txt/.md", required = true)
+            @RequestPart("file") MultipartFile file
+    )
+    {
         try {
-            TKnowledgeDocument document = tKnowledgeDocumentService.uploadDocument(documentFile);
+            TKnowledgeDocument document = tKnowledgeDocumentService.uploadDocument(knowledgeBase,categoryId,file);
             return Result.success(document);
         } catch (IOException e) {
             log.error("文件上传失败: {}", e.getMessage(), e);

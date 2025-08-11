@@ -1,6 +1,7 @@
 package com.serching.fulltextsearching.service;
 
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Dify 同步服务接口
@@ -21,4 +22,14 @@ public interface DifySyncService {
      * @return 是否删除成功
      */
     boolean removeDocumentFromDify(TKnowledgeDocument document);
+
+    /**
+     * 通过文件在Dify知识库创建文档
+     *
+     * @param datasetId 知识库ID
+     * @param file 要上传的文件
+     * @return 文档在Dify中的唯一标识ID
+     * @throws Exception 当文件上传失败或API调用出错时抛出
+     */
+    String createDocumentByFile(String datasetId, MultipartFile file) throws Exception;
 }

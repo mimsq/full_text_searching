@@ -1,9 +1,14 @@
 package com.serching.fulltextsearching.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.serching.fulltextsearching.common.Result;
+import com.serching.fulltextsearching.entity.TKnowledgeBase;
+import com.serching.fulltextsearching.entity.TKnowledgeBaseCategory;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
+import com.serching.fulltextsearching.exception.BusinessException;
+import com.serching.fulltextsearching.mapper.KnowledgeBaseCategoryMapper;
+import com.serching.fulltextsearching.mapper.TKnowledgeBaseMapper;
 import com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper;
-import com.serching.fulltextsearching.repository.TKnowledgeDocumentRepository;
 import com.serching.fulltextsearching.service.TKnowledgeDocumentService;
 import com.serching.fulltextsearching.utils.DocumentTools;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
@@ -27,8 +32,6 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     @Autowired
     DocumentTools documentTools;
 
-    @Autowired
-    TKnowledgeDocumentRepository tKnowledgeDocumentRepository;
 
     @Autowired
     TKnowledgeDocumentMapper tKnowledgeDocumentMapper;
@@ -36,55 +39,92 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     @Autowired
     DifySyncService difySyncService;
 
+    @Autowired
+    private TKnowledgeBaseMapper tKnowledgeBaseMapper;
+
+    @Autowired
+    private KnowledgeBaseCategoryMapper knowledgeBaseCategoryMapper;
+
     private static final Logger logger = LoggerFactory.getLogger(TKnowledgeDocumentServiceImpl.class);
 
 
     @Override
-    public TKnowledgeDocument uploadDocument(MultipartFile file) throws IOException {
-        try {
-            //生成唯一文件名
-            String filename = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            //定义保存路径(可根据需要修改)
-            String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
-            //保存文件到本地路径
-            File localFile = new File(filePath);
-            file.transferTo(localFile);
-
-            //提取文件内容
-            String content = documentTools.extractTextFromPath(filePath);
-
-            //处理mysql文档存储
-            TKnowledgeDocument document = new TKnowledgeDocument();
-            document.setTitle(file.getOriginalFilename());
-            document.setContent(content);
-            document.setDocSuffix(documentTools.getFileExtension(file.getOriginalFilename()));
-            document.setCreatedAt(LocalDateTime.now());
-//            document.setCreatedBy();
-            document.setProcessingStatus(1);
-            document.setDocStatus(1);
-            document.setUpdatedAt(LocalDateTime.now());
-            //参数设置完毕，传入数据库
-            if (this.save(document)){
-                Long id = document.getId();
-                //处理elasticsearch的文档存储
-                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(id+"",file.getOriginalFilename(),content);
-                try{
-                    tKnowledgeDocumentRepository.save(esDocument);
-                }catch (Exception e){
-                    throw new RuntimeException("文档保存失败:"+e.getMessage(),e);
-                }
-                //保存成功，返回对象信息
-                return document;
-            }
-
-
-        }catch (IOException e){
-            throw new RuntimeException("文件保存失败:" + e.getMessage(),e);
-        }catch (Exception e){
-            throw new RuntimeException("文档处理失败:"+e.getMessage(),e);
+    public TKnowledgeDocument uploadDocument(TKnowledgeBase kb, Long categoryId, MultipartFile file) throws IOException {
+        // 1) 参数校验
+        if (kb == null || kb.getId() == null) {
+            throw new BusinessException(400, "知识库信息非法，需提供 knowledgeBase.id");
         }
-        //保存失败，返回空
-        return null;
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(400, "文件不能为空");
+        }
+
+        //检查文件格式
+        String originalName = file.getOriginalFilename();
+        String suffix = (originalName != null && originalName.contains("."))
+                ? originalName.substring(originalName.lastIndexOf(".") + 1).toLowerCase()
+                : "";
+        if (!("txt".equals(suffix) || "md".equals(suffix))) {
+            throw new BusinessException(400, "仅支持 .txt 或 .md 文件");
+        }
+
+        //保存临时文件并抽取文本
+        String tmpPath = System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID() + "_" + originalName;
+        try{
+            File local = new File(tmpPath);
+            file.transferTo(local);
+        }catch (IOException e){
+            throw new BusinessException(500,"文件保存失败：" + e.getMessage(),e);
+        }
+        String content;
+
+        try {
+            content = documentTools.extractTextFromPath(tmpPath);
+        }catch (Exception e){
+            throw new BusinessException(500,"文件内容提取失败：" + e.getMessage(),e);
+        }
+
+        //上传到dify知识库中
+        //获取dify知识库标识id
+        String kbId = kb.getBaseId();
+        if (kbId == null || kbId.isEmpty()) {
+            throw new BusinessException(400, "knowledgeBase.baseId 不能为空");
+        }
+        //定义ducumentId，从存入dify之后响应中获取
+        String difyDocmentId;
+        try{
+            difyDocmentId = difySyncService.createDocumentByFile(kbId,file);
+        } catch (Exception e) {
+            throw new BusinessException("Dify创建文档失败：" + e.getMessage());
+        }
+
+
+
+
+        //组装实体并保存
+        TKnowledgeDocument doc = new TKnowledgeDocument();
+        doc.setKbId(kb.getBaseId());//TKnowledgeDocument的KbId对应TKnowledgeBase的baseId,都是dify中用于标识的id，而非数据库或者ES中id（自增Long）
+        doc.setCategoryId(categoryId);
+        doc.setContent(content);
+        doc.setTitle(originalName);
+        doc.setDocSuffix(suffix);
+        doc.setProcessingStatus(1);
+        doc.setDocStatus(1);
+        doc.setDelStatus(0);
+        doc.setDocType(0);
+        //doc.setDocMetadata();
+        //doc.setFileId();后续处理
+        //doc.setPreviewInfo();
+        doc.setDifyDocumentId(difyDocmentId);//需要先上传到dify接受返回值才能填写
+        doc.setCreatedAt(LocalDateTime.now());
+        doc.setUpdatedAt(LocalDateTime.now());
+
+        boolean mysqlSaved = this.save(doc);
+        if (!mysqlSaved) throw new BusinessException(500, "文档保存失败");
+
+        //TODO ES:预留同步位置
+
+
+        return doc;
     }
 
     @Override
@@ -104,14 +144,10 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
                     throw new RuntimeException(e);
                 }
             }
-            // 2.更新Elasticsearch
-            try{
-                Long id = tKnowledgeDocument.getId();
-                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(id+"",tKnowledgeDocument.getTitle(),tKnowledgeDocument.getContent());
-                tKnowledgeDocumentRepository.save(esDocument);
-            }catch (Exception e){
-                throw new RuntimeException("文档更新失败:"+e.getMessage(),e);
-            }
+            //TODO ES:预留同步位置
+
+            //TODO ES:预留同步位置
+
             // 3.更新Dify
             try {
                 // 使用 kbId + difyDocumentId 更新 Dify 中的文档
@@ -158,16 +194,12 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             }
 
             // 不再从数据库字段读取本地文件路径，删除逻辑略过
-            
-            // 删除Elasticsearch中的数据（后续再做修改）
-            try {
-                tKnowledgeDocumentRepository.deleteById(id.toString());
-                logger.info("Elasticsearch 文档删除成功, 文档ID: {}", id);
-            } catch (Exception e) {
-                logger.error("Elasticsearch 文档删除失败, 文档ID: {}", id, e);
-                // 即使ES删除失败，也继续删除MySQL数据
-            }
-            
+            //TODO ES:预留同步位置
+
+
+            //TODO ES:预留同步位置
+
+
             // 删除MySQL中的数据
             boolean deleted = this.removeById(id);
             if (deleted) {

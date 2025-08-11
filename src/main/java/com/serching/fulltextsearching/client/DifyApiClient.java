@@ -1,17 +1,21 @@
 package com.serching.fulltextsearching.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -37,6 +41,39 @@ public class DifyApiClient {
         this.httpClient = HttpClients.createDefault();
         this.objectMapper = new ObjectMapper();
         log.info("DifyApiClient 初始化完成，baseUrl: {}", baseUrl);
+    }
+    //通过文件创建文档，返回 dify 文档ID
+    public String createDocumentByFile(String kbId, File file,Map<String,Object> dataConfig) throws Exception{
+        String url = baseUrl + "/v1/datasets/" + kbId + "/document/create-by-file";
+        String dataJson = (dataConfig == null) ? "{}" : objectMapper.writeValueAsString(dataConfig);
+
+        HttpPost post = new HttpPost(url);
+        post.setHeader("Authorization", "Bearer " + apiKey);
+
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.addTextBody("data", dataJson, ContentType.TEXT_PLAIN.withCharset(StandardCharsets.UTF_8));
+        builder.addBinaryBody("file", file, ContentType.DEFAULT_BINARY, file.getName());
+        post.setEntity(builder.build());
+
+        log.info("POST {}", url);
+        log.debug("data={}", dataJson);
+
+        try (CloseableHttpClient http = HttpClients.createDefault();
+             CloseableHttpResponse resp = http.execute(post)) {
+            String body = EntityUtils.toString(resp.getEntity(), StandardCharsets.UTF_8);
+            int code = resp.getStatusLine().getStatusCode();
+            log.info("Dify create-by-file status={}, bodyLength={}", code, body.length());
+            if (code < 200 || code >= 300) {
+                throw new RuntimeException("Dify 通过文件创建文档失败: " + body);
+            }
+            JsonNode root = objectMapper.readTree(body);
+            JsonNode doc = root.path("document");
+            String difyDocumentId = doc.path("id").asText(null);
+            if (difyDocumentId == null) {
+                throw new RuntimeException("Dify 响应中缺少 document.id: " + body);
+            }
+            return difyDocumentId;
+        }
     }
     
     /**

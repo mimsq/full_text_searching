@@ -7,8 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Dify 同步服务实现类
@@ -104,6 +109,30 @@ public class DifySyncServiceImpl implements DifySyncService {
             log.error("文档同步删除从 Dify 发生未知异常，documentId: {}, difyDocumentId: {}, 错误: {}", 
                     document.getId(), document.getDifyDocumentId(), e.getMessage(), e);
             return false;
+        }
+    }
+
+    @Override
+    public String createDocumentByFile(String datasetId, MultipartFile file) throws Exception {
+        if (!syncEnabled) {
+            log.info("Dify 同步关闭，跳过 create-by-file");
+            return null;
+        }
+        String tmp = System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        File local = new File(tmp);
+        file.transferTo(local);
+        try {
+            // 使用Java 8兼容的HashMap初始化方式
+            Map<String, Object> processRule = new HashMap<>();
+            processRule.put("mode", "automatic");
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("indexing_technique", "high_quality");
+            data.put("process_rule", processRule);
+
+            return difyApiClient.createDocumentByFile(datasetId, local, data);
+        } finally {
+            try { local.delete(); } catch (Exception ignore) {}
         }
     }
 }
