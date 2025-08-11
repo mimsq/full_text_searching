@@ -3,25 +3,15 @@ package com.serching.fulltextsearching.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.mapper.TKnowledgeBaseMapper;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
@@ -151,5 +141,16 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         pageResult.setPages(resultPage.getPages());
 
         return pageResult;
+    }
+
+    @Override
+    public void setPermission(String id, int scopeType) {
+        //操作数据库，将scopeType更新为scopeType
+        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
+        if (knowledgeBase == null) {
+            throw new RuntimeException("知识库不存在");
+        }
+        knowledgeBase.setScopeType(scopeType);
+        knowledgeBaseMapper.updateById(knowledgeBase);
     }
 }

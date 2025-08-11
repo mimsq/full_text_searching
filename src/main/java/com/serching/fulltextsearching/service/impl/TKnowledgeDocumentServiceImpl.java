@@ -3,7 +3,7 @@ package com.serching.fulltextsearching.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper;
-import com.serching.fulltextsearching.repository.TKnowledgeDocumentRepository;
+import com.serching.fulltextsearching.service.ElasticsearchSyncService;
 import com.serching.fulltextsearching.service.TKnowledgeDocumentService;
 import com.serching.fulltextsearching.utils.DocumentTools;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
@@ -28,7 +28,8 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     DocumentTools documentTools;
 
     @Autowired
-    TKnowledgeDocumentRepository tKnowledgeDocumentRepository;
+    ElasticsearchSyncService elasticsearchSyncService;
+
 
     @Autowired
     TKnowledgeDocumentMapper tKnowledgeDocumentMapper;
@@ -69,7 +70,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
                 //处理elasticsearch的文档存储
                 ESKnowledgeDocument esDocument = new ESKnowledgeDocument(id+"",file.getOriginalFilename(),content);
                 try{
-                    tKnowledgeDocumentRepository.save(esDocument);
+                    elasticsearchSyncService.syncDocumentToEs(esDocument);
                 }catch (Exception e){
                     throw new RuntimeException("文档保存失败:"+e.getMessage(),e);
                 }
@@ -106,9 +107,8 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             }
             // 2.更新Elasticsearch
             try{
-                Long id = tKnowledgeDocument.getId();
-                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(id+"",tKnowledgeDocument.getTitle(),tKnowledgeDocument.getContent());
-                tKnowledgeDocumentRepository.save(esDocument);
+                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(tKnowledgeDocument.getId()+"",tKnowledgeDocument.getTitle(),tKnowledgeDocument.getContent());
+                elasticsearchSyncService.syncDocumentToEs(esDocument);
             }catch (Exception e){
                 throw new RuntimeException("文档更新失败:"+e.getMessage(),e);
             }
@@ -161,7 +161,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             
             // 删除Elasticsearch中的数据（后续再做修改）
             try {
-                tKnowledgeDocumentRepository.deleteById(id.toString());
+                elasticsearchSyncService.deleteDocumentFromEs(id.toString());
                 logger.info("Elasticsearch 文档删除成功, 文档ID: {}", id);
             } catch (Exception e) {
                 logger.error("Elasticsearch 文档删除失败, 文档ID: {}", id, e);

@@ -69,4 +69,14 @@ public class KnowledgeBaseController {
         }
     }
 
+    @PostMapping("/permission")
+    public Result setPermission(@RequestParam String id, @RequestParam(required = false) int scopeType){
+        try {
+            knowledgeService.setPermission(id, scopeType);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
 }
