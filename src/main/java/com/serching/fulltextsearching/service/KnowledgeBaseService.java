@@ -15,5 +15,5 @@ public interface KnowledgeBaseService {
 
     void updateKnowledge(String id, String name, String coverImagePath, Integer scopeType, String descriptionInfo);
 
-    PageResult<TKnowledgeBase> getKnowledgeList(int page, int size, String keyword, String sortBy);
+    PageResult<TKnowledgeBase> getKnowledgeList(int page, int size);
 }
