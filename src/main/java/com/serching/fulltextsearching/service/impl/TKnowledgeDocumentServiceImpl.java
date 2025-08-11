@@ -85,21 +85,22 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
     @Override
     public TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument) {
+        // 更新时间
+        tKnowledgeDocument.setUpdatedAt(LocalDateTime.now());
         // 使用updateById方法更新文档
         boolean isUpdated = this.updateById(tKnowledgeDocument);
         if (isUpdated) {
 
-// 生成文件名和路径（参考uploadDocument方法）
-            String filename = tKnowledgeDocument.getId() + ".txt";
-            String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
-
-            // 创建txt文件并写入内容
-            try {
-                documentTools.createTextFile(filePath, tKnowledgeDocument.getContent());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            // 若有内容则生成/覆盖临时文件
+            if (tKnowledgeDocument.getContent() != null) {
+                String filename = tKnowledgeDocument.getId() + ".txt";
+                String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
+                try {
+                    documentTools.createTextFile(filePath, tKnowledgeDocument.getContent());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-            // 不再持久化本地文件路径到数据库
 
             try{
                 Long id = tKnowledgeDocument.getId();

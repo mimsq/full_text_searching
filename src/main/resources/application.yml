@@ -9,6 +9,9 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
 
   datasource:
     url: jdbc:mysql://192.168.125.128:3306/full_text_searching?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
