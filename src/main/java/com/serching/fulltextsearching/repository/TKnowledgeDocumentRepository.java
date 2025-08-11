@@ -18,9 +18,9 @@ public interface TKnowledgeDocumentRepository extends ElasticsearchRepository<ES
     List<TKnowledgeDocument> findByContentContaining(String content);
     
     /**
-     * 根据文件名搜索文档
-     * @param filename 文件名
+     * 根据标题搜索文档
+     * @param title 标题
      * @return 匹配的文档列表
      */
-    List<TKnowledgeDocument> findByFilename(String filename);
+    List<ESKnowledgeDocument> findByTitle(String title);
 }
