@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 public class TKnowledgeBase {
     @TableId(type = IdType.AUTO)
     private Long id;
+    private String title; // 知识库名称
+    private String baseId;
     private String coverImagePath; // 封面图标
     private Integer scopeType; // 权限可见范围:0:私密、1:公开
     private String descriptionInfo; // 知识库描述信息

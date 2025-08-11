@@ -8,7 +8,7 @@ import java.io.*;
 @Component
 public class DocumentTools {
 
-    private Tika tika;
+    private final Tika tika = new Tika();
 
     //从文档中提取文本
     public String extractTextFromPath(String filePath) throws IOException {
