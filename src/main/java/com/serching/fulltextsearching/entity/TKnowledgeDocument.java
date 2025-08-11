@@ -20,7 +20,7 @@ public class TKnowledgeDocument {
     /**
      * 关联知识库 id
      */
-    private Long kbId;
+    private String kbId;
 
     /**
      * 文档分类 id
