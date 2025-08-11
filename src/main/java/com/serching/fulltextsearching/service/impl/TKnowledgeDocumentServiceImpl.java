@@ -7,6 +7,7 @@ import com.serching.fulltextsearching.repository.TKnowledgeDocumentRepository;
 import com.serching.fulltextsearching.service.TKnowledgeDocumentService;
 import com.serching.fulltextsearching.utils.DocumentTools;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
+import com.serching.fulltextsearching.service.DifySyncService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
     @Autowired
     TKnowledgeDocumentMapper tKnowledgeDocumentMapper;
+
+    @Autowired
+    DifySyncService difySyncService;
 
     private static final Logger logger = LoggerFactory.getLogger(TKnowledgeDocumentServiceImpl.class);
 
@@ -85,12 +89,11 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
     @Override
     public TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument) {
-        // 更新时间
+        // 1.更新本地数据库
         tKnowledgeDocument.setUpdatedAt(LocalDateTime.now());
-        // 使用updateById方法更新文档
         boolean isUpdated = this.updateById(tKnowledgeDocument);
+        
         if (isUpdated) {
-
             // 若有内容则生成/覆盖临时文件
             if (tKnowledgeDocument.getContent() != null) {
                 String filename = tKnowledgeDocument.getId() + ".txt";
@@ -101,7 +104,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
                     throw new RuntimeException(e);
                 }
             }
-
+            // 2.更新Elasticsearch
             try{
                 Long id = tKnowledgeDocument.getId();
                 ESKnowledgeDocument esDocument = new ESKnowledgeDocument(id+"",tKnowledgeDocument.getTitle(),tKnowledgeDocument.getContent());
@@ -109,60 +112,26 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             }catch (Exception e){
                 throw new RuntimeException("文档更新失败:"+e.getMessage(),e);
             }
+            // 3.更新Dify
+            try {
+                // 使用 kbId + difyDocumentId 更新 Dify 中的文档
+                boolean difySyncResult = difySyncService.updateDocumentInDify(tKnowledgeDocument);
+                if (difySyncResult) {
+                    logger.info("Dify 同步更新成功, 本地ID: {}, Dify文档ID: {}", 
+                        tKnowledgeDocument.getId(), tKnowledgeDocument.getDifyDocumentId());
+                } else {
+                    logger.warn("Dify 同步更新失败, 本地ID: {}, Dify文档ID: {}", 
+                        tKnowledgeDocument.getId(), tKnowledgeDocument.getDifyDocumentId());
+                }
+            } catch (Exception e) {
+                logger.error("Dify 同步更新异常, 本地ID: {}", tKnowledgeDocument.getId(), e);
+            }
+
             return tKnowledgeDocument;
         }
         return null;
     }
-    
-    @Override
-    public TKnowledgeDocument createDocument(TKnowledgeDocument tKnowledgeDocument) {
-        try {
-            // 设置创建时间和更新时间
-            LocalDateTime now = LocalDateTime.now();
-            if (tKnowledgeDocument.getCreatedAt() == null) {
-                tKnowledgeDocument.setCreatedAt(now);
-            }
-            tKnowledgeDocument.setUpdatedAt(now);
-            
-            // 设置默认状态（如果未设置）
-            if (tKnowledgeDocument.getProcessingStatus() == null) {
-                tKnowledgeDocument.setProcessingStatus(1); // 已完成
-            }
-            if (tKnowledgeDocument.getDocStatus() == null) {
-                tKnowledgeDocument.setDocStatus(1); // 启用
-            }
-            
-            // 先保存到数据库以获取ID
-            boolean saved = this.save(tKnowledgeDocument);
-            if (saved) {
-                // 生成文件名和路径并写入内容（如需）
-                String filename = tKnowledgeDocument.getId() + ".txt";
-                String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
-                documentTools.createTextFile(filePath, tKnowledgeDocument.getContent());
-                
-                // 同步到 Elasticsearch
-                try {
-                    ESKnowledgeDocument esDocument = new ESKnowledgeDocument();
-                    esDocument.setId(tKnowledgeDocument.getId().toString());
-                    esDocument.setTitle(tKnowledgeDocument.getTitle());
-                    esDocument.setContent(tKnowledgeDocument.getContent());
-                    tKnowledgeDocumentRepository.save(esDocument);
-                    logger.info("Elasticsearch 同步成功, 文档ID: {}", tKnowledgeDocument.getId());
-                } catch (Exception e) {
-                    logger.error("Elasticsearch 同步失败, 文档ID: {}", tKnowledgeDocument.getId(), e);
-                }
-                
-                return tKnowledgeDocument;
-            }
-            
-            logger.warn("文档创建失败: title={}", tKnowledgeDocument.getTitle());
-            return null;
-            
-        } catch (Exception e) {
-            logger.error("文档创建异常: ", e);
-            throw new RuntimeException("文档创建失败: " + e.getMessage(), e);
-        }
-    }
+
     
     @Override
     public boolean deleteDocument(Long id) {
@@ -173,10 +142,24 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
                 logger.warn("文档不存在: id={}", id);
                 return false;
             }
-            
+
+            //先同步删除Dify 中的文档
+            try{
+                boolean difySyncResult = difySyncService.removeDocumentFromDify(document);
+                if (difySyncResult) {
+                    logger.info("Dify 同步删除成功, 本地ID: {}, Dify文档ID: {}", 
+                        document.getId(), document.getDifyDocumentId());
+                } else {
+                    logger.warn("Dify 同步删除失败, 本地ID: {}, Dify文档ID: {}", 
+                        document.getId(), document.getDifyDocumentId());
+                }
+            } catch (Exception e) {
+                logger.error("Dify 同步删除异常, 本地ID: {}", document.getId(), e);
+            }
+
             // 不再从数据库字段读取本地文件路径，删除逻辑略过
             
-            // 删除Elasticsearch中的数据
+            // 删除Elasticsearch中的数据（后续再做修改）
             try {
                 tKnowledgeDocumentRepository.deleteById(id.toString());
                 logger.info("Elasticsearch 文档删除成功, 文档ID: {}", id);

@@ -77,15 +77,6 @@ public class TKnowledgeDocumentController {
         return Result.success(document);
     }
 
-    @PostMapping
-    @Operation(summary = "创建文档", description = "创建新的知识文档")
-    public Result<TKnowledgeDocument> createDocument(
-            @Parameter(description = "文档信息", required = true)
-            @Valid @RequestBody TKnowledgeDocument tKnowledgeDocument) {
-        log.info("创建文档: title={}", tKnowledgeDocument.getTitle());
-        TKnowledgeDocument createdDocument = tKnowledgeDocumentService.createDocument(tKnowledgeDocument);
-        return Result.success(createdDocument);
-    }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除文档", description = "根据ID删除知识文档")

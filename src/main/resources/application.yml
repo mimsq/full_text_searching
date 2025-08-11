@@ -39,3 +39,7 @@ minio:
   access-key: #minioadmin
   secret-key: #minioadmin
   bucket: #knowledge-files
+
+dify:
+  base-url: http://localhost:18080
+  api-key: dataset-agCdYnX6Yj0MYf9DUMqOWMMW

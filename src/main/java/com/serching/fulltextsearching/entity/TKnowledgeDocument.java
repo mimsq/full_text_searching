@@ -88,6 +88,16 @@ public class TKnowledgeDocument {
     private String previewInfo;
 
     /**
+     * Dify 中的文档 ID
+     *
+     * ALTER TABLE t_knowledge_document
+     * ADD COLUMN dify_document_id VARCHAR(255) COMMENT 'Dify 中的文档 ID';
+     *
+     * CREATE INDEX idx_dify_document_id ON t_knowledge_document(dify_document_id);
+     */
+    private String difyDocumentId;
+
+    /**
      * 创建时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
