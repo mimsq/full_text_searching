@@ -18,6 +18,16 @@ public class TKnowledgeDocument {
     private Long id;
 
     /**
+     * 关联知识库 id
+     */
+    private Long kbId;
+
+    /**
+     * 文档分类 id
+     */
+    private Long categoryId;
+
+    /**
      * 文档内容
      */
     private String content;
@@ -28,9 +38,54 @@ public class TKnowledgeDocument {
     private String title;
 
     /**
+     * 概述描述
+     */
+    private String summary;
+
+    /**
      * 文件后缀
      */
     private String docSuffix;
+
+    /**
+     * 字数
+     */
+    private Integer wordCount;
+
+    /**
+     * 处理状态：0 未开始、1 完成、2 处理中
+     */
+    private Integer processingStatus;
+
+    /**
+     * 文档状态：0 不可用、1 可用
+     */
+    private Integer docStatus;
+
+    /**
+     * 删除状态：0 未删除、1 已删除
+     */
+    private Integer delStatus;
+
+    /**
+     * 文档类型：0 文本、1 图片、2 音频、3 视频、4 其他
+     */
+    private Integer docType;
+
+    /**
+     * 文档其他信息（建议 JSON）
+     */
+    private String docMetadata;
+
+    /**
+     * 关联文件 id（t_knowledge_file.id）
+     */
+    private Long fileId;
+
+    /**
+     * 预览信息 / 地址
+     */
+    private String previewInfo;
 
     /**
      * 创建时间
@@ -44,24 +99,9 @@ public class TKnowledgeDocument {
     private Long createdBy;
 
     /**
-     * 处理状态 (0: 处理中, 1: 已完成, 2: 失败)
+     * 更新人ID
      */
-    private Integer processingStatus;
-
-    /**
-     * 文档状态 (0: 禁用, 1: 启用)
-     */
-    private Integer docStatus;
-
-    /**
-     * 文件大小(字节)
-     */
-    private Long fileSize;
-
-    /**
-     * 文档来源路径
-     */
-    private String sourcePath;
+    private Long updatedBy;
 
     /**
      * 最后更新时间

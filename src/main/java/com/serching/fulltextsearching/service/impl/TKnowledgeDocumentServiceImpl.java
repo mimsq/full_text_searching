@@ -1,7 +1,6 @@
 package com.serching.fulltextsearching.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.serching.fulltextsearching.controller.TKnowledgeDocumentController;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper;
 import com.serching.fulltextsearching.repository.TKnowledgeDocumentRepository;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,7 +23,8 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         implements TKnowledgeDocumentService {
 
 
-    DocumentTools documentTools = new DocumentTools();
+    @Autowired
+    DocumentTools documentTools;
 
     @Autowired
     TKnowledgeDocumentRepository tKnowledgeDocumentRepository;
@@ -33,7 +32,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     @Autowired
     TKnowledgeDocumentMapper tKnowledgeDocumentMapper;
 
-    private static final Logger logger = LoggerFactory.getLogger(TKnowledgeDocumentController.class);
+    private static final Logger logger = LoggerFactory.getLogger(TKnowledgeDocumentServiceImpl.class);
 
 
     @Override
@@ -59,8 +58,6 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 //            document.setCreatedBy();
             document.setProcessingStatus(1);
             document.setDocStatus(1);
-            document.setFileSize(file.getSize());
-            document.setSourcePath(filePath);
             document.setUpdatedAt(LocalDateTime.now());
             //参数设置完毕，传入数据库
             if (this.save(document)){
@@ -102,8 +99,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            // 更新sourcePath字段
-            tKnowledgeDocument.setSourcePath(filePath);
+            // 不再持久化本地文件路径到数据库
 
             try{
                 Long id = tKnowledgeDocument.getId();
@@ -137,18 +133,11 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             
             // 先保存到数据库以获取ID
             boolean saved = this.save(tKnowledgeDocument);
-            Long id = tKnowledgeDocument.getId();
             if (saved) {
-                // 生成文件名和路径（参考uploadDocument方法）
+                // 生成文件名和路径并写入内容（如需）
                 String filename = tKnowledgeDocument.getId() + ".txt";
                 String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
-                
-                // 创建txt文件并写入内容
                 documentTools.createTextFile(filePath, tKnowledgeDocument.getContent());
-                
-                // 更新sourcePath字段
-                tKnowledgeDocument.setSourcePath(filePath);
-                this.updateById(tKnowledgeDocument);
                 
                 // 同步到 Elasticsearch
                 try {
@@ -184,23 +173,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
                 return false;
             }
             
-            // 删除本地文件（如果存在）
-            String filePath = document.getSourcePath();
-            if (filePath != null && !filePath.isEmpty()) {
-                try {
-                    File file = new File(filePath);
-                    if (file.exists()) {
-                        boolean deleted = file.delete();
-                        if (deleted) {
-                            logger.info("本地文件删除成功: {}", filePath);
-                        } else {
-                            logger.warn("本地文件删除失败: {}", filePath);
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.error("删除本地文件时发生异常: {}", filePath, e);
-                }
-            }
+            // 不再从数据库字段读取本地文件路径，删除逻辑略过
             
             // 删除Elasticsearch中的数据
             try {

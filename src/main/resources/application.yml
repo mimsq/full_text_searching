@@ -4,8 +4,6 @@ spring:
 
   elasticsearch:
     uris: http://localhost:9200
-    username: #elastic
-    password: #your-es-password
 
   servlet:
     multipart:
@@ -13,9 +11,21 @@ spring:
       max-request-size: 10MB
 
   datasource:
-    url: #jdbc:mysql://localhost:3306/knowledge_base
-    username: #root
-    password: #your-db-password
+    url: jdbc:mysql://192.168.125.128:3306/full_text_searching?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # MyBatis-Plus配置
+  mybatis-plus:
+    configuration:
+      map-underscore-to-camel-case: true
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    global-config:
+      db-config:
+        id-type: auto
+        table-prefix: t_
+    mapper-locations: classpath*:mapper/**/*Mapper.xml
 
 logging:
   level:

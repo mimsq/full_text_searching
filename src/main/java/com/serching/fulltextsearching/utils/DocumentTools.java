@@ -1,9 +1,11 @@
 package com.serching.fulltextsearching.utils;
 
 import org.apache.tika.Tika;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 
+@Component
 public class DocumentTools {
 
     private Tika tika;
