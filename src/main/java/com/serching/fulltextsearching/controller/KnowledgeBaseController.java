@@ -14,12 +14,12 @@ import java.util.Map;
 public class KnowledgeBaseController {
 
     @Autowired
-    private KnowledgeBaseService difyKnowledgeService;
+    private KnowledgeBaseService knowledgeService;
 
     @PostMapping("/create")
     public Result createKnowledge(@RequestParam String name, @RequestParam(required = false) String coverImagePath, @RequestParam(defaultValue = "1") Integer scopeType, @RequestParam(required = false) String descriptionInfo){
         try {
-            difyKnowledgeService.createKnowledge(name, coverImagePath, scopeType, descriptionInfo);
+            knowledgeService.createKnowledge(name, coverImagePath, scopeType, descriptionInfo);
             return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -29,7 +29,7 @@ public class KnowledgeBaseController {
     @PostMapping("/delete")
     public Result deleteKnowledge(@RequestParam String id){
         try {
-            difyKnowledgeService.deleteKnowledge(id);
+            knowledgeService.deleteKnowledge(id);
             return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -39,7 +39,7 @@ public class KnowledgeBaseController {
     @GetMapping("/detail/{id}")
     public Result<TKnowledgeBase> getKnowledgeDetail(@PathVariable Long id){
         try {
-            TKnowledgeBase tKnowledgeBase = difyKnowledgeService.getKnowledgeDetail(id);
+            TKnowledgeBase tKnowledgeBase = knowledgeService.getKnowledgeDetail(id);
             return Result.success(tKnowledgeBase);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -49,7 +49,7 @@ public class KnowledgeBaseController {
     @PostMapping("/update/{id}")
     public Result updateKnowledge(@PathVariable String id, @RequestParam String name,@RequestParam(required = false) String coverImagePath, @RequestParam(defaultValue = "1") Integer scopeType, @RequestParam(required = false) String descriptionInfo){
         try {
-            difyKnowledgeService.updateKnowledge(id, name, coverImagePath, scopeType, descriptionInfo);
+            knowledgeService.updateKnowledge(id, name, coverImagePath, scopeType, descriptionInfo);
             return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -64,12 +64,31 @@ public class KnowledgeBaseController {
             @RequestParam(required = false) String sortBy
     ){
         try {
-            PageResult<TKnowledgeBase> result = difyKnowledgeService.getKnowledgeList(page, size, keyword, sortBy);
+            PageResult<TKnowledgeBase> result = knowledgeService.getKnowledgeList(page, size, keyword, sortBy);
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
     }
 
+    @PostMapping("/setPermission")
+    public Result setPermission(@RequestParam String id, @RequestParam Integer scopeType){
+        try {
+            knowledgeService.setPermission(id, scopeType);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/getPermission")
+    public Result<Integer> getPermission(@RequestParam String knowledgeBaseId){
+        try {
+            Integer permission = knowledgeService.getPermission(knowledgeBaseId);
+            return Result.success(permission);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 
 }

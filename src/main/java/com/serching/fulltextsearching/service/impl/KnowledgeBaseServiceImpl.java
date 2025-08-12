@@ -225,4 +225,24 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
         return pageResult;
     }
+
+    @Override
+    public void setPermission(String id, int scopeType) {
+        //操作数据库，将scopeType更新为scopeType
+        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
+        if (knowledgeBase == null) {
+            throw new RuntimeException("知识库不存在");
+        }
+        knowledgeBase.setScopeType(scopeType);
+        knowledgeBaseMapper.updateById(knowledgeBase);
+    }
+
+    @Override
+    public Integer getPermission(String knowledgeBaseId) {
+        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(knowledgeBaseId);
+        if (knowledgeBase == null) {
+            throw new RuntimeException("知识库不存在");
+        }
+        return knowledgeBase.getScopeType();
+    }
 }

@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.serching.fulltextsearching.common.PageResult;
+import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.exception.BusinessException;
 import com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper;
+import com.serching.fulltextsearching.service.ElasticsearchSyncService;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import com.serching.fulltextsearching.service.TKnowledgeDocumentService;
 import com.serching.fulltextsearching.utils.DocumentTools;
@@ -37,13 +39,14 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     @Autowired
     private DifySyncService difySyncService;
 
-    
-
     @Autowired
     private KnowledgeBaseService knowledgeBaseService;
     
     @Autowired
     private FileUploadConfig fileUploadConfig;
+
+    @Autowired
+    private ElasticsearchSyncService elasticsearchSyncService;
 
     private static final Logger logger = LoggerFactory.getLogger(TKnowledgeDocumentServiceImpl.class);
 
@@ -155,8 +158,6 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         //定义ducumentId，从存入dify之后响应中获取
         String difyDocmentId;
         try{
-
-
             difyDocmentId = difySyncService.createDocumentByFile(kbId,sourceFile);
         } catch (Exception e) {
             throw new BusinessException("Dify创建文档失败：" + e.getMessage());
@@ -186,14 +187,21 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         boolean mysqlSaved = this.save(doc);
         if (!mysqlSaved) throw new BusinessException(500, "文档保存失败");
 
-        //TODO ES:预留同步位置
-
+        // ES同步
+        Long id = doc.getId();
+        //处理elasticsearch的文档存储
+        ESKnowledgeDocument esDocument = new ESKnowledgeDocument(id+"",file.getOriginalFilename(),content);
+        try{
+            elasticsearchSyncService.syncDocumentToEs(esDocument);
+        }catch (Exception e){
+            throw new RuntimeException("文档保存失败:"+e.getMessage(),e);
+        }
 
         return doc;
     }
 
 
-    //TODO 目前还是有一点问题，前端传值后端接受不到
+    //更新
     @Override
     public TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument) {
 
@@ -308,9 +316,13 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
 
 
-            //TODO ES:预留同步位置
-
-            //TODO ES:预留同步位置
+            //ES同步
+            try{
+                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(tKnowledgeDocument.getId()+"",tKnowledgeDocument.getTitle(),tKnowledgeDocument.getContent());
+                elasticsearchSyncService.syncDocumentToEs(esDocument);
+            }catch (Exception e){
+                throw new RuntimeException("文档更新到ES失败:"+e.getMessage(),e);
+            }
 
 
             return tKnowledgeDocument;
@@ -371,10 +383,14 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             }
 
             // 不再从数据库字段读取本地文件路径，删除逻辑略过
-            //TODO ES:预留同步位置
-
-
-            //TODO ES:预留同步位置
+            // 删除Elasticsearch中的数据（后续再做修改）
+            try {
+                elasticsearchSyncService.deleteDocumentFromEs(id.toString());
+                logger.info("Elasticsearch 文档删除成功, 文档ID: {}", id);
+            } catch (Exception e) {
+                logger.error("Elasticsearch 文档删除失败, 文档ID: {}", id, e);
+                // 即使ES删除失败，也继续删除MySQL数据
+            }
 
 
             // 删除MySQL中的数据
