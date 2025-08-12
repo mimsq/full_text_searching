@@ -18,4 +18,6 @@ public interface KnowledgeBaseService {
     PageResult<TKnowledgeBase> getKnowledgeList(int page, int size);
 
     void setPermission(String id, int scopeType);
+
+    Integer getPermission(String knowledgeBaseId);
 }

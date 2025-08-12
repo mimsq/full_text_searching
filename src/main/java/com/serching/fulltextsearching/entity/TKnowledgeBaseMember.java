@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @TableName("t_knowledge_base_member")
 public class TKnowledgeBaseMember {
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
     private Long kbId; // 知识库id
     private Long userId; // 用户id
     private Integer memberType; // 成员类型:0：所有者(可管理)、1管理员(可编辑)3、普通成员(仅查看)

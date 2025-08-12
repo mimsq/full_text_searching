@@ -21,6 +21,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     @Autowired
     private TKnowledgeBaseMapper knowledgeBaseMapper;
+
     @Value("${dify.url}")
     private String difyApiUrl;
 
@@ -152,5 +153,14 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         }
         knowledgeBase.setScopeType(scopeType);
         knowledgeBaseMapper.updateById(knowledgeBase);
+    }
+
+    @Override
+    public Integer getPermission(String knowledgeBaseId) {
+        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(knowledgeBaseId);
+        if (knowledgeBase == null) {
+            throw new RuntimeException("知识库不存在");
+        }
+        return knowledgeBase.getScopeType();
     }
 }

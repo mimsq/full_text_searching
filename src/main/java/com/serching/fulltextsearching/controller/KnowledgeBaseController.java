@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/base")
+@RequestMapping("/knowledge")
 public class KnowledgeBaseController {
 
     @Autowired
@@ -26,8 +26,8 @@ public class KnowledgeBaseController {
         }
     }
 
-    @PostMapping("/delete")
-    public Result deleteKnowledge(@RequestParam String id){
+    @DeleteMapping("/delete/{id}")
+    public Result deleteKnowledge(@PathVariable String id){
         try {
             knowledgeService.deleteKnowledge(id);
             return Result.success();
@@ -69,8 +69,8 @@ public class KnowledgeBaseController {
         }
     }
 
-    @PostMapping("/permission")
-    public Result setPermission(@RequestParam String id, @RequestParam(required = false) int scopeType){
+    @PostMapping("/setPermission")
+    public Result setPermission(@RequestParam String id, @RequestParam Integer scopeType){
         try {
             knowledgeService.setPermission(id, scopeType);
             return Result.success();
@@ -79,4 +79,13 @@ public class KnowledgeBaseController {
         }
     }
 
+    @PostMapping("/getPermission")
+    public Result<Integer> getPermission(@RequestParam String knowledgeBaseId){
+        try {
+            Integer permission = knowledgeService.getPermission(knowledgeBaseId);
+            return Result.success(permission);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 }

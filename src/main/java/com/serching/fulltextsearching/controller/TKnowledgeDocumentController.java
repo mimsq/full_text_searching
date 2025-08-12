@@ -90,5 +90,4 @@ public class TKnowledgeDocumentController {
         }
         return Result.success();
     }
-
 }

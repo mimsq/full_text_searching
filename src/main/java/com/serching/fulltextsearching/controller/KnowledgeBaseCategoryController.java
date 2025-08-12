@@ -23,8 +23,8 @@ public class KnowledgeBaseCategoryController {
         }
     }
 
-    @PostMapping("/delete")
-    public Result<Void> deleteCategory(@RequestParam Long id){
+    @DeleteMapping("/delete/{id}")
+    public Result<Void> deleteCategory(@PathVariable Long id){
         try {
             knowledgeBaseCategoryService.removeById(id);
             return Result.success();

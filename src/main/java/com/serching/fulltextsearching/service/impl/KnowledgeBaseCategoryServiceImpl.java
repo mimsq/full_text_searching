@@ -12,6 +12,7 @@ public class KnowledgeBaseCategoryServiceImpl implements KnowledgeBaseCategorySe
     @Autowired
     private KnowledgeBaseCategoryMapper tKnowledgeBaseCategoryMapper;
 
+
     @Override
     public void createCategory(String name, Long knowledgeBaseId) {
         TKnowledgeBaseCategory tKnowledgeBaseCategory = new TKnowledgeBaseCategory();
@@ -22,6 +23,7 @@ public class KnowledgeBaseCategoryServiceImpl implements KnowledgeBaseCategorySe
 
     @Override
     public void removeById(Long id) {
+
         tKnowledgeBaseCategoryMapper.deleteById(id);
     }
 
