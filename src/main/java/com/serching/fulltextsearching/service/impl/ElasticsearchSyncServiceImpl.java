@@ -1,6 +1,7 @@
 package com.serching.fulltextsearching.service.impl;
 
 import com.serching.fulltextsearching.client.ElasticsearchApiClient;
+import com.serching.fulltextsearching.dto.EsSearchResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.service.ElasticsearchSyncService;
@@ -68,6 +69,16 @@ public class ElasticsearchSyncServiceImpl implements ElasticsearchSyncService {
         } catch (Exception e) {
             log.error("文档从 Elasticsearch 删除发生未知异常，documentId: {},错误: {}", documentId, e.getMessage());
             return false;
+        }
+    }
+
+    @Override
+    public EsSearchResult searchDocumentIds(String keyword, int page, int size) {
+        try {
+            return elasticsearchClient.searchDocuments(keyword, page, size);
+        } catch (Exception e) {
+            log.error("ES 搜索失败: {}", e.getMessage(), e);
+            throw new RuntimeException("ES 搜索失败: " + e.getMessage(), e);
         }
     }
 }

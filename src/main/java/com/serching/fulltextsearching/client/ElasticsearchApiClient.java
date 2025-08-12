@@ -1,13 +1,11 @@
 package com.serching.fulltextsearching.client;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch.core.DeleteRequest;
-import co.elastic.clients.elasticsearch.core.DeleteResponse;
-import co.elastic.clients.elasticsearch.core.IndexRequest;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
+import com.serching.fulltextsearching.dto.EsSearchResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
@@ -18,7 +16,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Elasticsearch 8 官方客户端实现
@@ -125,6 +125,28 @@ public class ElasticsearchApiClient {
             log.error("文档从 Elasticsearch 删除失败，documentId: {}", documentId, e);
             return false;
         }
+    }
+
+    /**
+     * 从 Elasticsearch 全文检索
+     */
+    public EsSearchResult searchDocuments(String keyword, int page, int size) throws IOException {
+        SearchResponse<ESKnowledgeDocument> resp = esClient.search(s -> s
+                        .index(indexName)
+                        .from((page - 1) * size)
+                        .size(size)
+                        .query(q -> q.multiMatch(mm -> mm
+                                .query(keyword)
+                                .fields("title^3", "content")
+                        ))
+                , ESKnowledgeDocument.class);
+
+        List<String> ids = resp.hits().hits().stream().map(h -> h.id()).collect(Collectors.toList());
+        long total = resp.hits().total() != null ? resp.hits().total().value() : ids.size();
+        EsSearchResult out = new EsSearchResult();
+        out.setIds(ids);
+        out.setTotal(total);
+        return out;
     }
 
     /**

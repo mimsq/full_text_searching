@@ -30,4 +30,9 @@ public interface TKnowledgeDocumentService extends IService<TKnowledgeDocument> 
      * @return 分页结果
      */
     PageResult<TKnowledgeDocument> pageByKbId(Long kbId, long current, long size);
+
+    /**
+     * 从 Elasticsearch 全文检索
+     */
+    PageResult<TKnowledgeDocument> search(String keyword, int page, int size);
 }

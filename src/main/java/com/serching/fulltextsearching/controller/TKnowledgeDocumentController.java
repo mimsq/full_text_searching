@@ -126,4 +126,25 @@ public class TKnowledgeDocumentController {
         return Result.success(page);
     }
 
+
+    /**
+     * 全文检索接口，使用Elasticsearch实现高效的文档全文检索
+     * 支持关键词分词匹配、高亮显示和分页查询
+     *
+     * @param keyword 检索关键词，支持中文分词和模糊匹配
+     * @param page 页码，从1开始，默认值为1
+     * @param size 每页条数，默认值为10
+     * @return 包含分页文档列表的Result对象
+     * @see com.serching.fulltextsearching.service.TKnowledgeDocumentService#search(String, int, int)
+     */
+    @GetMapping("/search")
+    @Operation(summary = "全文检索")
+    public Result<PageResult<TKnowledgeDocument>> search(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return Result.success(tKnowledgeDocumentService.search(keyword, page, size));
+    }
+
 }

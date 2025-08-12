@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.serching.fulltextsearching.common.PageResult;
+import com.serching.fulltextsearching.dto.EsSearchResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
@@ -27,6 +28,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumentMapper, TKnowledgeDocument>
@@ -409,5 +416,39 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         }
     }
 
+    @Override
+    public PageResult<TKnowledgeDocument> search(String keyword, int page, int size) {
+        if (keyword == null || keyword.isEmpty()) {
+            throw new BusinessException(400, "keyword 不能为空");
+        }
+        EsSearchResult es = elasticsearchSyncService.searchDocumentIds(keyword, page, size);
+        List<String> idStrs = es.getIds();
+
+        if (idStrs == null || idStrs.isEmpty()) {
+            PageResult<TKnowledgeDocument> pr = new PageResult<>();
+            pr.setRecords(Collections.emptyList());
+            pr.setTotal(0);
+            pr.setSize(size);
+            pr.setCurrent(page);
+            pr.setPages(0);
+            return pr;
+        }
+
+        List<Long> ids = idStrs.stream().map(Long::valueOf).collect(Collectors.toList());
+        List<TKnowledgeDocument> list = this.list(new QueryWrapper<TKnowledgeDocument>().in("id", ids));
+        Map<Long, TKnowledgeDocument> map = list.stream().collect(Collectors.toMap(TKnowledgeDocument::getId, Function.identity()));
+        List<TKnowledgeDocument> ordered = ids.stream().map(map::get).filter(Objects::nonNull).collect(Collectors.toList());
+
+        long total = es.getTotal();
+        long pages = size > 0 ? (total + size - 1) / size : 0;
+
+        PageResult<TKnowledgeDocument> pr = new PageResult<>();
+        pr.setRecords(ordered);
+        pr.setTotal(total);
+        pr.setSize(size);
+        pr.setCurrent(page);
+        pr.setPages(pages);
+        return pr;
+    }
     
 }
