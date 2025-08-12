@@ -28,7 +28,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     @Autowired
     private TKnowledgeBaseMapper knowledgeBaseMapper;
-    @Value("${dify.url}")
+    @Value("${dify.base-url}")
     private String difyApiUrl;
 
     @Value("${dify.api-key}")
@@ -110,7 +110,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
-    public TKnowledgeBase getKnowledgeDetail(String id) {
+    public TKnowledgeBase getKnowledgeDetail(Long id) {
 //        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
 //        if (knowledgeBase == null) {
 //            throw new RuntimeException("知识库不存在");

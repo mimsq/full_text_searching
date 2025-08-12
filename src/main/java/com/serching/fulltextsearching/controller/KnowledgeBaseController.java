@@ -37,7 +37,7 @@ public class KnowledgeBaseController {
     }
 
     @GetMapping("/detail/{id}")
-    public Result<TKnowledgeBase> getKnowledgeDetail(@PathVariable String id){
+    public Result<TKnowledgeBase> getKnowledgeDetail(@PathVariable Long id){
         try {
             TKnowledgeBase tKnowledgeBase = difyKnowledgeService.getKnowledgeDetail(id);
             return Result.success(tKnowledgeBase);

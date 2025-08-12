@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Dify API 客户端
@@ -164,6 +166,92 @@ public class DifyApiClient {
             throw e;
         }
     }
+
+    /**
+     * 通过文件更新 Dify 知识库中的文档
+     * @param datasetId 知识库ID
+     * @param documentId 文档ID
+     * @param file 需要上传的文件
+     * @return 更新是否成功
+     */
+    public boolean updateDocumentByFile(String datasetId, String documentId, File file) throws Exception {
+        String url = baseUrl + "/v1/datasets/" + datasetId + "/documents/" + documentId + "/update-by-file";
+        
+        log.info("开始通过文件更新 Dify 文档，datasetId: {}, documentId: {}, url: {}", datasetId, documentId, url);
+        
+        // 构建正确的配置数据，按照API文档格式
+        Map<String, Object> dataConfig = new HashMap<>();
+        dataConfig.put("indexing_technique", "high_quality");
+        
+        // 构建process_rule，注意嵌套结构
+        Map<String, Object> processRule = new HashMap<>();
+        processRule.put("mode", "automatic");
+        
+        // 构建rules（即使mode是automatic，也需要提供）
+        Map<String, Object> rules = new HashMap<>();
+        
+        // 预处理规则
+        List<Map<String, Object>> preProcessingRules = new ArrayList<>();
+        Map<String, Object> rule1 = new HashMap<>();
+        rule1.put("id", "remove_extra_spaces");
+        rule1.put("enabled", true);
+        preProcessingRules.add(rule1);
+        
+        Map<String, Object> rule2 = new HashMap<>();
+        rule2.put("id", "remove_urls_emails");
+        rule2.put("enabled", true);
+        preProcessingRules.add(rule2);
+        
+        rules.put("pre_processing_rules", preProcessingRules);
+        
+        // 分段规则
+        Map<String, Object> segmentation = new HashMap<>();
+        segmentation.put("separator", "\n");
+        segmentation.put("max_tokens", 1000);
+        segmentation.put("parent_mode", "full-doc");
+        rules.put("segmentation", segmentation);
+        
+        processRule.put("rules", rules);
+        dataConfig.put("process_rule", processRule);
+        
+        String dataJson = objectMapper.writeValueAsString(dataConfig);
+        
+        log.info("构建的data配置: {}", dataConfig);
+        log.info("序列化后的JSON字符串: {}", dataJson);
+        
+        // 创建HTTP请求
+        HttpPost httpPost = new HttpPost(url);
+        httpPost.setHeader("Authorization", "Bearer " + apiKey);
+        
+        // 构建multipart请求体
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.addTextBody("data", dataJson, ContentType.TEXT_PLAIN.withCharset(StandardCharsets.UTF_8));
+        builder.addBinaryBody("file", file, ContentType.DEFAULT_BINARY, file.getName());
+        httpPost.setEntity(builder.build());
+        
+        log.info("POST {}", url);
+        
+        // 执行请求
+        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            int statusCode = response.getStatusLine().getStatusCode();
+            
+            log.info("Dify 文档文件更新完成，状态码: {}, documentId: {}", statusCode, documentId);
+            log.debug("Dify 响应体: {}", responseBody);
+            
+            if (statusCode >= 200 && statusCode < 300) {
+                log.info("Dify 文档文件更新成功，documentId: {}", documentId);
+                return true;
+            } else {
+                log.error("Dify 文档文件更新失败，状态码: {}, documentId: {}, 响应: {}", statusCode, documentId, responseBody);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Dify 文档文件更新异常，documentId: {}, 错误: {}", documentId, e.getMessage(), e);
+            throw e;
+        }
+    }
+
     
     /**
      * 关闭HTTP客户端

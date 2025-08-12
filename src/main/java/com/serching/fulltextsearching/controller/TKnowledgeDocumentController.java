@@ -1,10 +1,12 @@
 package com.serching.fulltextsearching.controller;
 
+import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.common.Result;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.exception.BusinessException;
 import com.serching.fulltextsearching.service.TKnowledgeDocumentService;
+import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 
 @Slf4j
@@ -27,20 +28,29 @@ public class TKnowledgeDocumentController {
 
     @Autowired
     private TKnowledgeDocumentService tKnowledgeDocumentService;
+    
+    @Autowired
+    private KnowledgeBaseService knowledgeBaseService;
 
-    @PostMapping(value = "/upload",consumes = "multipart/form-data")
-    @Operation(summary = "上传文件创建文档(绑定知识库/可选分组)", description = "file: 仅支持 .txt/.md; knowledgeBase: JSON; categoryId: 可选")
+    @PostMapping(value = "/upload", consumes = "multipart/form-data")
+    @Operation(summary = "上传文件创建文档(绑定知识库/可选分组)", description = "file: 仅支持 .txt/.md; knowledgeBaseId: 知识库ID; categoryId: 可选")
     public Result<TKnowledgeDocument> uploadDocument(
-            @Parameter(description = "知识库实体(JSON)，至少包含 id", required = true)
-            @RequestPart("knowledgeBase") @Valid TKnowledgeBase knowledgeBase,
+            @Parameter(description = "知识库ID", required = true)
+            @RequestParam("knowledgeId") Long knowledgeId,
             @Parameter(description = "知识库分组ID(可选)")
-            @RequestPart(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "categoryId", required = false) Long categoryId,
             @Parameter(description = "要上传的文件，仅支持 .txt/.md", required = true)
             @RequestPart("file") MultipartFile file
     )
     {
         try {
-            TKnowledgeDocument document = tKnowledgeDocumentService.uploadDocument(knowledgeBase,categoryId,file);
+             //先查询知识库信息
+            TKnowledgeBase knowledgeBase = knowledgeBaseService.getKnowledgeDetail(knowledgeId);
+            if (knowledgeBase == null) {
+                throw new BusinessException("知识库不存在: " + knowledgeId);
+            }
+
+            TKnowledgeDocument document = tKnowledgeDocumentService.uploadDocument(knowledgeBase, categoryId, file);
             return Result.success(document);
         } catch (IOException e) {
             log.error("文件上传失败: {}", e.getMessage(), e);
@@ -61,6 +71,7 @@ public class TKnowledgeDocumentController {
         // 若请求体未带ID则补齐；若带了不一致则报错
         if (tKnowledgeDocument.getId() == null) {
             tKnowledgeDocument.setId(id);
+
         } else if (!id.equals(tKnowledgeDocument.getId())) {
             throw new BusinessException(400, "路径ID与请求体ID不一致");
         }
@@ -96,6 +107,23 @@ public class TKnowledgeDocumentController {
             throw new BusinessException(404, "文档不存在或删除失败");
         }
         return Result.success();
+    }
+
+    @GetMapping("/page")
+    @Operation(summary = "分页查询文档(按知识库)", description = "仅查询MySQL，根据 knowledgeId 查询 t_knowledge_document.kb_id，并进行分页")
+    public Result<PageResult<TKnowledgeDocument>> pageDocuments(
+            @Parameter(description = "知识库ID(对应 t_knowledge_base.id)", required = true)
+            @RequestParam("knowledgeId") Long knowledgeId,
+            @Parameter(description = "当前页(从1开始)")
+            @RequestParam(value = "page", defaultValue = "1") long current,
+            @Parameter(description = "每页大小")
+            @RequestParam(value = "size", defaultValue = "10") long size
+    ) {
+        if (knowledgeId == null) {
+            throw new BusinessException(400, "知识库ID不能为空");
+        }
+        PageResult<TKnowledgeDocument> page = tKnowledgeDocumentService.pageByKbId(knowledgeId, current, size);
+        return Result.success(page);
     }
 
 }

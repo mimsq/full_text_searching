@@ -11,7 +11,7 @@ public interface KnowledgeBaseService {
 
     void deleteKnowledge(String id);
 
-    TKnowledgeBase getKnowledgeDetail(String id);
+    TKnowledgeBase getKnowledgeDetail(Long id);
 
     void updateKnowledge(String id, String name, String coverImagePath, Integer scopeType, String descriptionInfo);
 
