@@ -1,11 +1,12 @@
 package com.serching.fulltextsearching.controller;
 
 import com.serching.fulltextsearching.common.Result;
-import com.serching.fulltextsearching.entity.TKnowledgeBaseCategory;
 import com.serching.fulltextsearching.service.KnowledgeBaseCategoryService;
+import com.serching.fulltextsearching.vo.DocumentGroupVo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/category")
@@ -38,6 +39,16 @@ public class KnowledgeBaseCategoryController {
         try {
             knowledgeBaseCategoryService.updateCategory(id, name);
             return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @GetMapping("/list")
+    public Result<List<DocumentGroupVo>> getCategoryList(@RequestParam Long knowledgeBaseId, @RequestParam Integer pageNum, @RequestParam Integer pageSize){
+        try {
+            List<DocumentGroupVo> categories = knowledgeBaseCategoryService.getCategoryList(knowledgeBaseId, pageNum, pageSize);
+            return Result.success(categories);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

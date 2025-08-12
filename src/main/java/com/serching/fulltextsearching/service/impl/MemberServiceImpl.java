@@ -25,20 +25,22 @@ public class MemberServiceImpl implements MemberService {
             TKnowledgeBaseMember tKnowledgeBaseMember = new TKnowledgeBaseMember();
             tKnowledgeBaseMember.setKbId(kbId);
             tKnowledgeBaseMember.setUserId(Long.valueOf(member.getTargetId()));
-            tKnowledgeBaseMember.setMemberType(Integer.valueOf(member.getTargetType()));
+            tKnowledgeBaseMember.setMemberType(Integer.valueOf(member.getPermission()));
             return tKnowledgeBaseMember;
         }).collect(Collectors.toList());
         knowledgeBaseMemberMapper.insertBatch(members);
     }
 
     @Override
-    public void delete(Long id) {
-        knowledgeBaseMemberMapper.deleteById(id);
+    public void delete(MemberKbPermissionDto dto) {
+        knowledgeBaseMemberMapper.delete(new LambdaQueryWrapper<TKnowledgeBaseMember>()
+                .eq(TKnowledgeBaseMember::getKbId, dto.getKnowledgeBaseId())
+                .eq(TKnowledgeBaseMember::getUserId, Long.valueOf(dto.getAccessControls().get(0).getTargetId())));
     }
 
     @Override
-    public void update(Long id, Integer memberType) {
-        knowledgeBaseMemberMapper.updateMemberType(id, memberType);
+    public void update(MemberKbPermissionDto dto) {
+        knowledgeBaseMemberMapper.updateMemberType(dto.getKnowledgeBaseId(), Long.valueOf(dto.getAccessControls().get(0).getTargetId()), Integer.valueOf(dto.getAccessControls().get(0).getPermission()), 1L, LocalDateTime.now());
     }
 
     //给下面的sql查询加上分页查询的功能

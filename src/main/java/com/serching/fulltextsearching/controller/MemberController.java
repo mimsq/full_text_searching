@@ -25,16 +25,16 @@ public class MemberController {
     }
 
     //删除某个用户的权限信息
-    @DeleteMapping("/delete/{id}")
-    public Result delete(@PathVariable Long id) {
-        memberService.delete(id);
+    @DeleteMapping("/delete")
+    public Result delete(@RequestBody MemberKbPermissionDto dto) {
+        memberService.delete(dto);
         return Result.success();
     }
 
     //更新某个用户的权限信息
-    @PostMapping("/update/{id}")
-    public Result update(@PathVariable Long id, @RequestParam Integer memberType) {
-        memberService.update(id, memberType);
+    @PostMapping("/update")
+    public Result update(@RequestBody MemberKbPermissionDto dto) {
+        memberService.update(dto);
         return Result.success();
     }
 
