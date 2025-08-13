@@ -192,7 +192,9 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         doc.setUpdatedAt(LocalDateTime.now());
 
         boolean mysqlSaved = this.save(doc);
-        if (!mysqlSaved) throw new BusinessException(500, "文档保存失败");
+        if (!mysqlSaved) {
+            throw new BusinessException(500, "文档保存失败");
+        }
 
         // ES同步
         Long id = doc.getId();

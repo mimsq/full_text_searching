@@ -1,11 +1,12 @@
 package com.serching.fulltextsearching.controller;
 
 import com.serching.fulltextsearching.common.Result;
-import com.serching.fulltextsearching.entity.TKnowledgeBaseCategory;
 import com.serching.fulltextsearching.service.KnowledgeBaseCategoryService;
+import com.serching.fulltextsearching.vo.DocumentGroupVo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/category")
@@ -23,8 +24,8 @@ public class KnowledgeBaseCategoryController {
         }
     }
 
-    @PostMapping("/delete")
-    public Result<Void> deleteCategory(@RequestParam Long id){
+    @DeleteMapping("/delete/{id}")
+    public Result<Void> deleteCategory(@PathVariable Long id){
         try {
             knowledgeBaseCategoryService.removeById(id);
             return Result.success();
@@ -38,6 +39,15 @@ public class KnowledgeBaseCategoryController {
         try {
             knowledgeBaseCategoryService.updateCategory(id, name);
             return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @GetMapping("/list")
+    public Result<DocumentGroupVo> getCategoryList(@RequestParam Long knowledgeBaseId, @RequestParam Integer pageNum, @RequestParam Integer pageSize){
+        try {
+            return Result.success(knowledgeBaseCategoryService.getCategoryList(knowledgeBaseId, pageNum, pageSize));
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

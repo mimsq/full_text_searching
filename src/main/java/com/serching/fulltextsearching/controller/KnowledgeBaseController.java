@@ -7,10 +7,8 @@ import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
-@RequestMapping("/base")
+@RequestMapping("/knowledge")
 public class KnowledgeBaseController {
 
     @Autowired
@@ -26,8 +24,8 @@ public class KnowledgeBaseController {
         }
     }
 
-    @PostMapping("/delete")
-    public Result deleteKnowledge(@RequestParam String id){
+    @DeleteMapping("/delete/{id}")
+    public Result deleteKnowledge(@PathVariable Long id){
         try {
             knowledgeService.deleteKnowledge(id);
             return Result.success();
@@ -59,12 +57,10 @@ public class KnowledgeBaseController {
     @GetMapping("/list")
     public Result<PageResult<TKnowledgeBase>> getKnowledgeList(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String sortBy
+            @RequestParam(defaultValue = "10") int size
     ){
         try {
-            PageResult<TKnowledgeBase> result = knowledgeService.getKnowledgeList(page, size, keyword, sortBy);
+            PageResult<TKnowledgeBase> result = knowledgeService.getKnowledgeList(page, size);
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -90,5 +86,4 @@ public class KnowledgeBaseController {
             return Result.error(e.getMessage());
         }
     }
-
 }

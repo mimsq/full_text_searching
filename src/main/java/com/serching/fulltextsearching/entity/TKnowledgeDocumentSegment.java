@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @TableName("t_knowledge_document_segment")
 public class TKnowledgeDocumentSegment {
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
     private Long kbId; // 知识库id
     private Long docId; // 文档id
     private String content; // 文档切片内容

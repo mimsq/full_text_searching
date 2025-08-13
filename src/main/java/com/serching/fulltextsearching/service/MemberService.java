@@ -8,9 +8,9 @@ import java.util.List;
 public interface MemberService {
     void saveBatch(MemberKbPermissionDto dto);
 
-    void delete(Long id);
+    void delete(MemberKbPermissionDto dto);
 
-    void update(Long id, Integer memberType);
+    void update(MemberKbPermissionDto dto);
 
     List<TKnowledgeBaseMember> getMemberList(Long kbId, Integer pageNum, Integer pageSize);
 }

@@ -1,5 +1,6 @@
 package com.serching.fulltextsearching.service;
 
+import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -10,7 +11,6 @@ import java.io.File;
  * 用于处理文档与 Dify 知识库的同步操作
  */
 public interface DifySyncService {
-    
     /**
      * 更新 Dify 知识库中的文档
      * @param document 要更新的文档

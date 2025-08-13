@@ -1,5 +1,7 @@
 package com.serching.fulltextsearching.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serching.fulltextsearching.client.DifyApiClient;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
@@ -32,8 +34,6 @@ public class DifySyncServiceImpl implements DifySyncService {
     
     @Value("${dify.sync-enabled:true}")
     private boolean syncEnabled;
-
-
     
     @Override
     public boolean updateDocumentInDify(TKnowledgeDocument document) {

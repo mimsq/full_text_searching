@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @TableName("t_konwledge_base_outer_mapping")
 public class TKonwledgeBaseOuterMapping {
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
     private Long kbId;
     private String outId; // 外部关联对象id
     private String outType; // 外部系统类型:比如dify、ragflow

@@ -5,12 +5,13 @@ import com.serching.fulltextsearching.entity.TKnowledgeBaseMember;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface KnowledgeBaseMemberMapper extends BaseMapper<TKnowledgeBaseMember> {
     // 自定义批量插入方法
     void insertBatch(@Param("list") List<TKnowledgeBaseMember> members);
 
-    @Update("UPDATE t_knowledge_base_member SET member_type = #{memberType} WHERE id = #{id}")
-    int updateMemberType(@Param("id") Long id, @Param("memberType") Integer memberType);
+    @Update("UPDATE t_knowledge_base_member SET member_type = #{memberType}, updated_by = #{updatedBy}, updated_at = #{updatedAt} WHERE kb_id = #{kbId} AND user_id = #{userId}")
+    int updateMemberType(@Param("kbId") Long kbId, @Param("userId") Long userId, @Param("memberType") Integer memberType, @Param("updatedBy") Long updatedBy, @Param("updatedAt") LocalDateTime updatedAt);
 }
