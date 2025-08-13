@@ -8,13 +8,12 @@ import com.serching.fulltextsearching.dto.EsSearchResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
+import com.serching.fulltextsearching.entity.TKnowledgeFile;
 import com.serching.fulltextsearching.exception.BusinessException;
 import com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper;
-import com.serching.fulltextsearching.service.ElasticsearchSyncService;
-import com.serching.fulltextsearching.service.KnowledgeBaseService;
-import com.serching.fulltextsearching.service.TKnowledgeDocumentService;
+import com.serching.fulltextsearching.mapper.TKnowledgeFileMapper;
+import com.serching.fulltextsearching.service.*;
 import com.serching.fulltextsearching.utils.DocumentTools;
-import com.serching.fulltextsearching.service.DifySyncService;
 import com.serching.fulltextsearching.config.FileUploadConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +54,12 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     @Autowired
     private ElasticsearchSyncService elasticsearchSyncService;
 
+    @Autowired
+    private TKnowledgeFileMapper knowledgeFileMapper;
+
+    @Autowired
+    private TKnowledgeFileService knowledgeFileService;
+
     private static final Logger logger = LoggerFactory.getLogger(TKnowledgeDocumentServiceImpl.class);
 
 
@@ -77,62 +82,64 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             throw new BusinessException(400, "目前仅支持 .txt 或 .md 文件");
         }
 
-        // 确保临时目录存在
-        String tempDir = fileUploadConfig.getTempDir();
-        Path tempDirPath;
-        
-        // 处理路径，确保是绝对路径
-        if (tempDir.startsWith("./") || tempDir.startsWith(".\\")) {
-            // 相对路径，转换为绝对路径
-            String currentDir = System.getProperty("user.dir");
-            tempDirPath = Paths.get(currentDir, tempDir.substring(2));
-        } else if (tempDir.startsWith("/") || (tempDir.length() > 1 && tempDir.charAt(1) == ':')) {
-            // 绝对路径
-            tempDirPath = Paths.get(tempDir);
+        // 确保永久目录存在
+        String permanentDir = fileUploadConfig.getPermanentDir();
+        Path permanentPath ;
+
+        // 改进路径处理逻辑
+        if (permanentDir.startsWith("E:") || permanentDir.startsWith("D:") || permanentDir.startsWith("C:")) {
+            // Windows绝对路径
+            permanentPath = Paths.get(permanentDir).normalize();
+        } else if (permanentDir.startsWith("/")) {
+            // Unix绝对路径
+            permanentPath = Paths.get(permanentDir).normalize();
         } else {
-            // 相对路径，相对于当前工作目录
-            tempDirPath = Paths.get(System.getProperty("user.dir"), tempDir);
+            // 相对路径，转换为绝对路径
+            permanentPath = Paths.get(System.getProperty("user.dir"), permanentDir).normalize();
         }
-        
+
+        logger.info("配置的永久目录: {}", permanentDir);
+        logger.info("解析后的永久目录: {}", permanentPath.toAbsolutePath());
+
         // 确保目录存在
-        if (!Files.exists(tempDirPath)) {
+        if (!Files.exists(permanentPath)) {
             try {
-                Files.createDirectories(tempDirPath);
-                logger.info("创建临时目录: {}", tempDirPath.toAbsolutePath());
+                Files.createDirectories(permanentPath);
+                logger.info("创建临时目录: {}", permanentPath.toAbsolutePath());
             } catch (IOException e) {
-                logger.error("创建临时目录失败: {}", tempDirPath.toAbsolutePath(), e);
+                logger.error("创建临时目录失败: {}", permanentPath.toAbsolutePath(), e);
                 throw new BusinessException(500, "创建临时目录失败：" + e.getMessage(), e);
             }
         }
-        
+
         // 验证目录权限
-        if (!Files.isDirectory(tempDirPath) || !Files.isWritable(tempDirPath)) {
-            throw new BusinessException(500, "临时目录不可写或不是目录: " + tempDirPath.toAbsolutePath());
+        if (!Files.isDirectory(permanentPath) || !Files.isWritable(permanentPath)) {
+            throw new BusinessException(500, "临时目录不可写或不是目录: " + permanentPath.toAbsolutePath());
         }
 
-        //保存临时文件并抽取文本
+        //保存文件并抽取文本
         String originalName = file.getOriginalFilename();
-        Path sourceDirPath = tempDirPath; // 使用配置的目录作为源文件目录
+        Path sourceDirPath = permanentPath; // 使用配置的目录作为源文件目录
         Path sourceFilePath = sourceDirPath.resolve(originalName); // 保持原文件名
         File sourceFile = sourceFilePath.toFile();
-        
+
         logger.info("准备保存文件到: {}", sourceFile.getAbsolutePath());
-        
+
         try {
             // 将MultipartFile转换为File
             file.transferTo(sourceFile);
-            
+
             // 验证文件是否成功创建
             if (!sourceFile.exists()) {
                 throw new BusinessException(500, "文件创建失败：文件不存在");
             }
-            
+
             if (sourceFile.length() == 0) {
                 throw new BusinessException(500, "文件创建失败：文件大小为0");
             }
-            
+
             logger.info("文件创建成功: {} (大小: {} bytes)", sourceFile.getAbsolutePath(), sourceFile.length());
-            
+
         } catch (IOException e) {
             logger.error("文件保存失败: {}", e.getMessage(), e);
             // 尝试清理可能创建的不完整文件
@@ -155,6 +162,8 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             throw new BusinessException(500, "文件内容提取失败：" + e.getMessage(), e);
         }
 
+        
+        logger.info("文件已保存到永久目录: {}", sourceFile.getAbsolutePath());
 
         //上传到dify知识库中
         //获取dify知识库标识id
@@ -171,7 +180,11 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         }
 
 
-
+        TKnowledgeFile knowledgeFile = knowledgeFileService.saveFileInfo(
+                file,
+                permanentPath.toString(),
+                1L//默认userId后续对接user模块后实现真正的获取
+        );
 
         //组装实体并保存
         TKnowledgeDocument doc = new TKnowledgeDocument();
@@ -184,12 +197,13 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         doc.setDocStatus(1);
         doc.setDelStatus(0);
         doc.setDocType(0);
-        //doc.setDocMetadata();
-        //doc.setFileId();后续处理
-        //doc.setPreviewInfo();
+        doc.setFileId(knowledgeFile.getId());
         doc.setDifyDocumentId(difyDocmentId);//需要先上传到dify接受返回值才能填写
         doc.setCreatedAt(LocalDateTime.now());
         doc.setUpdatedAt(LocalDateTime.now());
+
+
+
 
         boolean mysqlSaved = this.save(doc);
         if (!mysqlSaved) {
@@ -256,7 +270,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
                 
                 try {
                     //获取配置的目录
-                    String tempDir = fileUploadConfig.getTempDir();
+                    String tempDir = fileUploadConfig.getPermanentDir();
                     Path tempDirPath = Paths.get(tempDir);
 
 

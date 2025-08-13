@@ -9,30 +9,17 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "file.upload")
 public class FileUploadConfig {
-    
     /**
-     * 临时文件目录
+     * 永久存储目录
      */
-    private String tempDir;
+    private String permanentDir;
+    // === 永久存储配置添加结束 ===
     
-    /**
-     * 是否启用清理
-     */
-    private boolean cleanupEnabled = true;
-    
-    public String getTempDir() {
-        return tempDir;
+    public String getPermanentDir() {
+        return permanentDir;
     }
     
-    public void setTempDir(String tempDir) {
-        this.tempDir = tempDir;
-    }
-    
-    public boolean isCleanupEnabled() {
-        return cleanupEnabled;
-    }
-    
-    public void setCleanupEnabled(boolean cleanupEnabled) {
-        this.cleanupEnabled = cleanupEnabled;
+    public void setPermanentDir(String permanentDir) {
+        this.permanentDir = permanentDir;
     }
 }
