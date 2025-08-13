@@ -41,5 +41,16 @@ public class DocumentTools {
         }
     }
 
+    /**
+     * 获取文件名后缀
+     * @param filename 文件名
+     * @return 文件名后缀
+     */
+    private String getFileSuffix(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return "";
+        }
+        return filename.substring(filename.lastIndexOf(".") + 1);
+    }
 
 }

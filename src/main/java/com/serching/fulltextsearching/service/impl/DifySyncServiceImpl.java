@@ -139,7 +139,7 @@ public class DifySyncServiceImpl implements DifySyncService {
 
             return difyApiClient.createDocumentByFile(datasetId, file, data);
         } finally {
-            try { file.delete(); } catch (Exception ignore) {}
+            log.info("Dify同步完成，保留文件: {}", file.getAbsolutePath());
         }
     }
 

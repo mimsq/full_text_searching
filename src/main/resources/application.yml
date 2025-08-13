@@ -37,12 +37,6 @@ logging:
   level:
     org.springframework.data.elasticsearch: DEBUG
 
-minio:
-  url: #http://localhost:9000
-  access-key: #minioadmin
-  secret-key: #minioadmin
-  bucket: #knowledge-files
-
 dify:
   base-url: http://localhost:18080
   api-key: dataset-agCdYnX6Yj0MYf9DUMqOWMMW
@@ -51,5 +45,4 @@ dify:
 # 文件上传配置
 file:
   upload:
-    temp-dir: E:\测试
-    cleanup-enabled: true
+    permanent-dir: ./file/upload  # 永久存储路径
