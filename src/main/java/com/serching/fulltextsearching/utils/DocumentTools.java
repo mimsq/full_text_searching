@@ -1,5 +1,6 @@
 package com.serching.fulltextsearching.utils;
 
+import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import org.apache.tika.Tika;
 import org.springframework.stereotype.Component;
 
@@ -39,5 +40,6 @@ public class DocumentTools {
             writer.write(content != null ? content : "");
         }
     }
+
 
 }

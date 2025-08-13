@@ -11,5 +11,5 @@ public interface KnowledgeBaseCategoryService {
 
     void updateCategory(Long id, String name);
 
-    List<DocumentGroupVo> getCategoryList(Long knowledgeBaseId, Integer pageNum, Integer pageSize);
+    DocumentGroupVo getCategoryList(Long knowledgeBaseId, Integer pageNum, Integer pageSize);
 }

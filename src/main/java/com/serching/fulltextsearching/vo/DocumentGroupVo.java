@@ -1,12 +1,14 @@
 package com.serching.fulltextsearching.vo;
 
+import com.serching.fulltextsearching.entity.TKnowledgeBaseCategory;
+import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class DocumentGroupVo
 {
-    private Long id;
-    private String title;
-    private Long categoryId;
-    private String type;
+    private List<TKnowledgeBaseCategory> categoryList;
+    private List<TKnowledgeDocument> documentList;
 }

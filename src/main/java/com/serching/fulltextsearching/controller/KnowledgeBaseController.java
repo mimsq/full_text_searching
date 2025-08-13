@@ -7,8 +7,6 @@ import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/knowledge")
 public class KnowledgeBaseController {
@@ -27,7 +25,7 @@ public class KnowledgeBaseController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public Result deleteKnowledge(@PathVariable String id){
+    public Result deleteKnowledge(@PathVariable Long id){
         try {
             knowledgeService.deleteKnowledge(id);
             return Result.success();
@@ -37,7 +35,7 @@ public class KnowledgeBaseController {
     }
 
     @GetMapping("/detail/{id}")
-    public Result<TKnowledgeBase> getKnowledgeDetail(@PathVariable String id){
+    public Result<TKnowledgeBase> getKnowledgeDetail(@PathVariable Long id){
         try {
             TKnowledgeBase tKnowledgeBase = knowledgeService.getKnowledgeDetail(id);
             return Result.success(tKnowledgeBase);

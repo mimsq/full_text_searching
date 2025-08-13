@@ -6,12 +6,18 @@ import com.serching.fulltextsearching.client.DifyApiClient;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.service.DifySyncService;
+import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Dify 同步服务实现类
@@ -22,6 +28,9 @@ public class DifySyncServiceImpl implements DifySyncService {
     
     @Autowired
     private DifyApiClient difyApiClient;
+
+    @Autowired
+    private KnowledgeBaseService knowledgeBaseService;
     
     @Value("${dify.sync-enabled:true}")
     private boolean syncEnabled;
@@ -145,11 +154,13 @@ public class DifySyncServiceImpl implements DifySyncService {
         }
         
         try {
+            TKnowledgeBase kb = knowledgeBaseService.getKnowledgeDetail(document.getKbId());
             log.info("开始同步删除文档从 Dify，documentId: {}, difyDocumentId: {}, kbId: {}", 
                     document.getId(), document.getDifyDocumentId(), document.getKbId());
-            
+
+
             String response = difyApiClient.deleteDocument(
-                    document.getKbId().toString(),
+                    kb.getBaseId(),
                     document.getDifyDocumentId()
             );
             
@@ -167,4 +178,56 @@ public class DifySyncServiceImpl implements DifySyncService {
             return false;
         }
     }
+
+    @Override
+    public String createDocumentByFile(String datasetId, File file) throws Exception {
+        if (!syncEnabled) {
+            log.info("Dify 同步关闭，跳过 create-by-file");
+            return null;
+        }
+
+        try {
+            log.info("开始同步创建文档从 Dify，datasetId: {}, fileName: {}", datasetId, file.getName());
+            Map<String, Object> processRule = new HashMap<>();
+            processRule.put("mode", "automatic");
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("indexing_technique", "high_quality");
+            data.put("process_rule", processRule);
+
+            return difyApiClient.createDocumentByFile(datasetId, file, data);
+        } finally {
+            try { file.delete(); } catch (Exception ignore) {}
+        }
+    }
+
+    @Override
+    public boolean updateDocumentByFile(String datasetId, String documentId, File file) throws Exception {
+        if (!syncEnabled) {
+            log.info("Dify 同步已禁用，跳过文件更新操作，datasetId: {}, documentId: {}", datasetId, documentId);
+            return false;
+        }
+
+        try {
+            log.info("开始通过文件更新 Dify 文档，datasetId: {}, documentId: {}, fileName: {}",
+                    datasetId, documentId, file.getName());
+
+            // 调用 DifyApiClient 的文件更新方法
+            boolean result = difyApiClient.updateDocumentByFile(datasetId, documentId, file);
+
+            if (result) {
+                log.info("Dify 文档文件更新成功，datasetId: {}, documentId: {}", datasetId, documentId);
+            } else {
+                log.error("Dify 文档文件更新失败，datasetId: {}, documentId: {}", datasetId, documentId);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("Dify 文档文件更新异常，datasetId: {}, documentId: {}, 错误: {}",
+                    datasetId, documentId, e.getMessage(), e);
+            throw e;
+        }
+    }
+
 }

@@ -17,16 +17,10 @@ import java.time.LocalDateTime;
 public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     @Autowired
-    private DifySyncServiceImpl difySyncService;
+    private DifySyncBaseServiceImpl difySyncBaseService;
 
     @Autowired
     private TKnowledgeBaseMapper knowledgeBaseMapper;
-
-    @Value("${dify.url}")
-    private String difyApiUrl;
-
-    @Value("${dify.api-key}")
-    private String difyApiKey;
 
     @Override
     public void createKnowledge(String name, String coverImagePath, Integer scopeType, String descriptionInfo) {
@@ -36,7 +30,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         knowledgeBase.setScopeType(scopeType);
         knowledgeBase.setDescriptionInfo(descriptionInfo);
         try {
-            String difyBaseId = difySyncService.createKnowledgeInDify(knowledgeBase);
+            String difyBaseId = difySyncBaseService.createKnowledgeInDify(knowledgeBase);
             knowledgeBase.setBaseId(difyBaseId); // 关联Dify知识库ID
             knowledgeBaseMapper.insert(knowledgeBase);
         } catch (Exception e) {
@@ -45,7 +39,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
-    public void deleteKnowledge(String id) {
+    public void deleteKnowledge(Long id) {
         // 1. 查询数据库获取Dify知识库ID
         TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
         if (knowledgeBase == null) {
@@ -54,7 +48,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
         // 2. 调用DifySyncService执行Dify平台删除操作
         try {
-            difySyncService.deleteKnowledgeFromDify(knowledgeBase.getBaseId());
+            difySyncBaseService.deleteKnowledgeFromDify(knowledgeBase.getBaseId());
         } catch (Exception e) {
             throw new RuntimeException("删除知识库失败", e);
         }
@@ -65,7 +59,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
 
     @Override
-    public TKnowledgeBase getKnowledgeDetail(String id) {
+    public TKnowledgeBase getKnowledgeDetail(Long id) {
 //        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
 //        if (knowledgeBase == null) {
 //            throw new RuntimeException("知识库不存在");
@@ -114,7 +108,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         // 2. 调用DifySyncService执行Dify平台更新操作
         try
         {
-            difySyncService.updateKnowledgeInDify(knowledgeBase);
+            difySyncBaseService.updateKnowledgeInDify(knowledgeBase);
         } catch (Exception e) {
             throw new RuntimeException("更新知识库失败", e);
         }

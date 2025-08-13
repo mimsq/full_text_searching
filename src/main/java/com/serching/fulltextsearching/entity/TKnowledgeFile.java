@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @TableName("t_knowledge_file")
 public class TKnowledgeFile {
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
     private String name; // 文件名
     private String filePath; // 存储路径
     private String suffix; // 后缀名

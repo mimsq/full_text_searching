@@ -5,7 +5,6 @@ import com.serching.fulltextsearching.dto.MemberKbPermissionDto;
 import com.serching.fulltextsearching.entity.TKnowledgeBaseMember;
 import com.serching.fulltextsearching.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
