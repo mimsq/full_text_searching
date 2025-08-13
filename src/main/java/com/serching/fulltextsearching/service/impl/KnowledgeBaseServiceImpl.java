@@ -29,9 +29,15 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         knowledgeBase.setCoverImagePath(coverImagePath);
         knowledgeBase.setScopeType(scopeType);
         knowledgeBase.setDescriptionInfo(descriptionInfo);
+        knowledgeBase.setKbType(0);
+        knowledgeBase.setIndexingType(0);
+        knowledgeBase.setCreatedBy(1L);
+        knowledgeBase.setCreatedAt(LocalDateTime.now());
+        knowledgeBase.setUpdatedBy(1L);
+        knowledgeBase.setUpdatedAt(LocalDateTime.now());
         try {
             String difyBaseId = difySyncBaseService.createKnowledgeInDify(knowledgeBase);
-            knowledgeBase.setBaseId(difyBaseId); // 关联Dify知识库ID
+            knowledgeBase.setBaseId(difyBaseId);
             knowledgeBaseMapper.insert(knowledgeBase);
         } catch (Exception e) {
             throw new RuntimeException("创建知识库失败", e);
@@ -60,31 +66,6 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     @Override
     public TKnowledgeBase getKnowledgeDetail(Long id) {
-//        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
-//        if (knowledgeBase == null) {
-//            throw new RuntimeException("知识库不存在");
-//        }
-//        String url = difyApiUrl + "/v1/datasets/" + knowledgeBase.getBaseId();
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.set("Authorization", "Bearer " + difyApiKey);
-//        HttpEntity<String> entity = new HttpEntity<>(headers);
-//
-//        try {
-//            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-//            if (response.getStatusCode().is2xxSuccessful()) {
-//                ObjectMapper objectMapper = new ObjectMapper();
-//                return objectMapper.readValue(response.getBody(), new TypeReference<Map<String, Object>>() {
-//                });
-//            } else {
-//                throw new RuntimeException("获取知识库详情失败: " + response.getStatusCode());
-//            }
-//        } catch (HttpClientErrorException e) {
-//            throw new RuntimeException("获取知识库详情失败: " + e.getResponseBodyAsString());
-//        } catch (JsonProcessingException e) {
-//            throw new RuntimeException("解析知识库详情失败");
-//        } catch (Exception e) {
-//            throw new RuntimeException("获取知识库详情时发生异常");
-//        }
         //从数据库中查出有关信息并返回
         TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
         if (knowledgeBase == null) {
@@ -102,9 +83,16 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         }
         knowledgeBase.setTitle(name);
         knowledgeBase.setUpdatedAt(LocalDateTime.now());
-        knowledgeBase.setCoverImagePath(coverImagePath);
-        knowledgeBase.setScopeType(scopeType);
-        knowledgeBase.setDescriptionInfo(descriptionInfo);
+        knowledgeBase.setUpdatedBy(1L);
+        if (coverImagePath != null) {
+            knowledgeBase.setCoverImagePath(coverImagePath);
+        }
+        if (scopeType != null) {
+            knowledgeBase.setScopeType(scopeType);
+        }
+        if (descriptionInfo != null) {
+            knowledgeBase.setDescriptionInfo(descriptionInfo);
+        }
         // 2. 调用DifySyncService执行Dify平台更新操作
         try
         {

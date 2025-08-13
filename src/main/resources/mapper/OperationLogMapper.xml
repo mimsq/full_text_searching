@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.serching.fulltextsearching.mapper.OperationLogMapper">
+    <select id="selectOperationLogWithDetails" resultType="com.serching.fulltextsearching.vo.OperationLogVo">
+        SELECT
+            ol.*,
+            d.title AS documentTitle,
+            u.name AS username,
+            u.avatarUrl
+        FROM
+            t_operation_log ol
+        LEFT JOIN
+            t_knowledge_document d ON ol.object_id = d.id
+        LEFT JOIN
+            t_knowledge_base_member u ON ol.created_by = u.id
+        WHERE
+            ol.kb_id = #{kbId}
+        ORDER BY
+            ol.created_at DESC
+        LIMIT #{pageNum}, #{pageSize}
+    </select>
+</mapper>

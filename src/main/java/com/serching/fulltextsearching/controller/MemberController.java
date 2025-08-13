@@ -18,21 +18,21 @@ public class MemberController {
 
 
     @PostMapping("/batch")
-    public Result saveBatch(@RequestBody MemberKbPermissionDto dto) {
+    public Result<Void> saveBatch(@RequestBody MemberKbPermissionDto dto) {
         memberService.saveBatch(dto);
         return Result.success();
     }
 
     //删除某个用户的权限信息
     @DeleteMapping("/delete")
-    public Result delete(@RequestBody MemberKbPermissionDto dto) {
+    public Result<Void> delete(@RequestBody MemberKbPermissionDto dto) {
         memberService.delete(dto);
         return Result.success();
     }
 
     //更新某个用户的权限信息
     @PostMapping("/update")
-    public Result update(@RequestBody MemberKbPermissionDto dto) {
+    public Result<Void> update(@RequestBody MemberKbPermissionDto dto) {
         memberService.update(dto);
         return Result.success();
     }

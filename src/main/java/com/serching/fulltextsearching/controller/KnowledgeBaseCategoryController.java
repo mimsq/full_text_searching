@@ -45,7 +45,7 @@ public class KnowledgeBaseCategoryController {
     }
 
     @GetMapping("/list")
-    public Result<DocumentGroupVo> getCategoryList(@RequestParam Long knowledgeBaseId, @RequestParam Integer pageNum, @RequestParam Integer pageSize){
+    public Result<DocumentGroupVo> getCategoryList(@RequestParam Long knowledgeBaseId, @RequestParam(defaultValue = "1") Integer pageNum, @RequestParam(defaultValue = "20") Integer pageSize){
         try {
             return Result.success(knowledgeBaseCategoryService.getCategoryList(knowledgeBaseId, pageNum, pageSize));
         } catch (Exception e) {

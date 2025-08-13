@@ -13,6 +13,7 @@ public class TOperationLog {
     private Integer operationType; // 操作类型
     private Long objectId; // 操作对象id:如知识库id、知识文档id
     private String objectType; // 知识库、知识、成员
+    private Long KbId;
     private Long createdBy; // 创建人
     private LocalDateTime createdAt;
     private Long updatedBy;

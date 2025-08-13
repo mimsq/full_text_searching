@@ -7,6 +7,6 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 public interface TKnowledgeDocumentMapper extends BaseMapper<TKnowledgeDocument> {
-    @Select("select * from t_knowledge_document where kb_id = #{knowledgeBaseId} order by category_id,id")
-    List<TKnowledgeDocument> selectByKbId(Long knowledgeBaseId);
+    @Select("select * from t_knowledge_document where kb_id = #{knowledgeBaseId} order by category_id,id limit #{pageNum},#{pageSize}")
+    List<TKnowledgeDocument> selectByKbId(Long knowledgeBaseId, Integer pageNum, Integer pageSize);
 }

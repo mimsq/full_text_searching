@@ -15,7 +15,7 @@ public class KnowledgeBaseController {
     private KnowledgeBaseService knowledgeService;
 
     @PostMapping("/create")
-    public Result createKnowledge(@RequestParam String name, @RequestParam(required = false) String coverImagePath, @RequestParam(defaultValue = "1") Integer scopeType, @RequestParam(required = false) String descriptionInfo){
+    public Result<Void> createKnowledge(@RequestParam String name, @RequestParam(required = false) String coverImagePath, @RequestParam(defaultValue = "1") Integer scopeType, @RequestParam(required = false) String descriptionInfo){
         try {
             knowledgeService.createKnowledge(name, coverImagePath, scopeType, descriptionInfo);
             return Result.success();
@@ -25,7 +25,7 @@ public class KnowledgeBaseController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public Result deleteKnowledge(@PathVariable Long id){
+    public Result<Void> deleteKnowledge(@PathVariable Long id){
         try {
             knowledgeService.deleteKnowledge(id);
             return Result.success();
@@ -45,7 +45,7 @@ public class KnowledgeBaseController {
     }
 
     @PostMapping("/update/{id}")
-    public Result updateKnowledge(@PathVariable String id, @RequestParam String name,@RequestParam(required = false) String coverImagePath, @RequestParam(defaultValue = "1") Integer scopeType, @RequestParam(required = false) String descriptionInfo){
+    public Result<Void> updateKnowledge(@PathVariable String id, @RequestParam String name,@RequestParam(required = false) String coverImagePath, @RequestParam(defaultValue = "1") Integer scopeType, @RequestParam(required = false) String descriptionInfo){
         try {
             knowledgeService.updateKnowledge(id, name, coverImagePath, scopeType, descriptionInfo);
             return Result.success();
@@ -68,7 +68,7 @@ public class KnowledgeBaseController {
     }
 
     @PostMapping("/setPermission")
-    public Result setPermission(@RequestParam String id, @RequestParam Integer scopeType){
+    public Result<Void> setPermission(@RequestParam String id, @RequestParam Integer scopeType){
         try {
             knowledgeService.setPermission(id, scopeType);
             return Result.success();

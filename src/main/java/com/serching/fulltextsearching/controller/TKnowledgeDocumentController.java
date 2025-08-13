@@ -5,6 +5,7 @@ import com.serching.fulltextsearching.common.Result;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.exception.BusinessException;
+import com.serching.fulltextsearching.service.OperationLogService;
 import com.serching.fulltextsearching.service.TKnowledgeDocumentService;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,9 @@ public class TKnowledgeDocumentController {
     @Autowired
     private KnowledgeBaseService knowledgeBaseService;
 
+    @Autowired
+    private OperationLogService operationLogService;
+
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     @Operation(summary = "上传文件创建文档(绑定知识库/可选分组)", description = "file: 仅支持 .txt/.md; knowledgeBaseId: 知识库ID; categoryId: 可选")
     public Result<TKnowledgeDocument> uploadDocument(
@@ -51,6 +55,8 @@ public class TKnowledgeDocumentController {
             }
 
             TKnowledgeDocument document = tKnowledgeDocumentService.uploadDocument(knowledgeBase, categoryId, file);
+            // 上传成功后，创建操作日志
+            operationLogService.addOperationLog(1,document.getId(),knowledgeId,1L);
             return Result.success(document);
         } catch (IOException e) {
             log.error("文件上传失败: {}", e.getMessage(), e);
@@ -77,6 +83,7 @@ public class TKnowledgeDocumentController {
         }
 
         TKnowledgeDocument updatedDocument = tKnowledgeDocumentService.updateDocument(tKnowledgeDocument);
+        operationLogService.addOperationLog(2,id,tKnowledgeDocument.getKbId(),1L);
         if (updatedDocument == null) {
             throw new BusinessException(404, "文档不存在或未更新");
         }
@@ -100,9 +107,12 @@ public class TKnowledgeDocumentController {
     @Operation(summary = "删除文档", description = "根据ID删除知识文档")
     public Result<Void> deleteDocument(
             @Parameter(description = "文档ID", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @Parameter(description = "知识库ID", required = true)
+            @RequestParam("knowledgeId") Long knowledgeId) {
         log.info("删除文档: id={}", id);
         boolean deleted = tKnowledgeDocumentService.deleteDocument(id);
+        operationLogService.addOperationLog(3,id,knowledgeId,1L);
         if (!deleted) {
             throw new BusinessException(404, "文档不存在或删除失败");
         }
