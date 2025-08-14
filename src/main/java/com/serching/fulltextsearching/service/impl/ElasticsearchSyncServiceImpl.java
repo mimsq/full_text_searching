@@ -39,7 +39,13 @@ public class ElasticsearchSyncServiceImpl implements ElasticsearchSyncService {
         try {
             log.info("开始同步文档到 Elasticsearch，documentId: {}", document.getId());
             boolean result = elasticsearchClient.syncDocument(document);
-            log.info("文档同步到 Elasticsearch 成功，documentId: {}", document.getId());
+
+            if (result) {
+                log.info("文档同步到 Elasticsearch 成功，documentId: {}", document.getId());
+            } else {
+                log.error("文档同步到 Elasticsearch 失败，documentId: {}", document.getId());
+            }
+
             return result;
         } catch (Exception e) {
             log.error("文档同步到 Elasticsearch 发生未知异常，documentId: {},错误: {}", document.getId(), e.getMessage());

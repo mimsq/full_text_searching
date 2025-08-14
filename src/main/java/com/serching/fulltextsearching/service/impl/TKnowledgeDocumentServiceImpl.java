@@ -18,7 +18,9 @@ import com.serching.fulltextsearching.config.FileUploadConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -64,63 +66,100 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
 
     @Override
+    @Transactional(rollbackFor = Exception.class, timeout = 300)//5分钟超时
     public TKnowledgeDocument uploadDocument(TKnowledgeBase kb, Long categoryId, MultipartFile file) throws IOException {
-        // 1) 参数校验
-        if (kb == null || kb.getId() == null) {
-            throw new BusinessException(400, "知识库信息非法，需提供 knowledgeBase.id");
+        logger.info("开始上传文档: {}", file.getOriginalFilename());
+
+        try {
+            // 1) 参数校验
+            validateUploadParameters(kb, file);
+
+            // 2) 检查文件格式
+            String suffix = validateFileFormat(file);
+
+            // 3) 保存文件到本地
+            Path sourceFile = saveFileToLocal(file);
+
+            // 4) 提取文本内容
+            String content = extractFileContent(sourceFile);
+
+            // 5) 上传到 Dify 知识库
+            String difyDocumentId = uploadToDify(kb, sourceFile);
+
+            // 6) 保存文件信息到数据库
+            TKnowledgeFile knowledgeFile = saveFileInfo(file, sourceFile);
+
+            // 7) 保存文档信息到数据库
+            TKnowledgeDocument doc = saveDocumentInfo(kb, categoryId, content,
+                    file.getOriginalFilename(), suffix,
+                    knowledgeFile, difyDocumentId);
+
+            // 8) 异步同步到 Elasticsearch（不影响事务）
+            syncToElasticsearch(doc, content);
+
+            logger.info("文档上传成功: {}, 文档ID: {}", file.getOriginalFilename(), doc.getId());
+            return doc;
+
+        } catch (Exception e) {
+            logger.error("文档上传失败: {}, 错误: {}", file.getOriginalFilename(), e.getMessage(), e);
+            throw e; // 重新抛出异常，触发事务回滚
         }
-        if (file == null || file.isEmpty()) {
-            throw new BusinessException(400, "文件不能为空");
+    }
+
+
+    /**
+    * 参数校验
+    */
+    private void validateUploadParameters(TKnowledgeBase kb,MultipartFile file){
+        if (kb == null|| kb.getId() == null){
+            throw new BusinessException(400,"知识库或知识库id不能为空");
         }
 
-        //检查文件格式
-        String originalNameTest = file.getOriginalFilename();
-        String suffix = (originalNameTest != null && originalNameTest.contains("."))
-                ? originalNameTest.substring(originalNameTest.lastIndexOf(".") + 1).toLowerCase()
+        if (file == null|| file.isEmpty()){
+            throw new BusinessException(400,"文件不能为空");
+        }
+    }
+
+
+
+
+
+    /**
+     * 检查文件格式
+     */
+    private String validateFileFormat(MultipartFile file){
+        String originalName = file.getOriginalFilename();
+        String suffix = (originalName != null && originalName.contains("."))
+                ? originalName.substring(originalName.lastIndexOf(".") + 1).toLowerCase()
                 : "";
         if (!("txt".equals(suffix) || "md".equals(suffix))) {
             throw new BusinessException(400, "目前仅支持 .txt 或 .md 文件");
         }
+        return suffix;
+    }
 
+
+
+    /**
+     * 保存文件到本地
+     */
+    private Path saveFileToLocal(MultipartFile file) throws IOException {
         // 确保永久目录存在
         String permanentDir = fileUploadConfig.getPermanentDir();
-        Path permanentPath ;
-
-        // 改进路径处理逻辑
-        if (permanentDir.startsWith("E:") || permanentDir.startsWith("D:") || permanentDir.startsWith("C:")) {
-            // Windows绝对路径
-            permanentPath = Paths.get(permanentDir).normalize();
-        } else if (permanentDir.startsWith("/")) {
-            // Unix绝对路径
-            permanentPath = Paths.get(permanentDir).normalize();
-        } else {
-            // 相对路径，转换为绝对路径
-            permanentPath = Paths.get(System.getProperty("user.dir"), permanentDir).normalize();
-        }
+        Path permanentPath = resolvePermanentPath(permanentDir);
 
         logger.info("配置的永久目录: {}", permanentDir);
         logger.info("解析后的永久目录: {}", permanentPath.toAbsolutePath());
 
         // 确保目录存在
-        if (!Files.exists(permanentPath)) {
-            try {
-                Files.createDirectories(permanentPath);
-                logger.info("创建临时目录: {}", permanentPath.toAbsolutePath());
-            } catch (IOException e) {
-                logger.error("创建临时目录失败: {}", permanentPath.toAbsolutePath(), e);
-                throw new BusinessException(500, "创建临时目录失败：" + e.getMessage(), e);
-            }
-        }
+        createDirectoryIfNotExists(permanentPath);
 
         // 验证目录权限
-        if (!Files.isDirectory(permanentPath) || !Files.isWritable(permanentPath)) {
-            throw new BusinessException(500, "临时目录不可写或不是目录: " + permanentPath.toAbsolutePath());
-        }
+        validateDirectoryPermissions(permanentPath);
 
-        //保存文件并抽取文本
+        // 保存文件
         String originalName = file.getOriginalFilename();
-        Path sourceDirPath = permanentPath; // 使用配置的目录作为源文件目录
-        Path sourceFilePath = sourceDirPath.resolve(originalName); // 保持原文件名
+        Path sourceFilePath = permanentPath.resolve(originalName);
         File sourceFile = sourceFilePath.toFile();
 
         logger.info("准备保存文件到: {}", sourceFile.getAbsolutePath());
@@ -130,98 +169,224 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             file.transferTo(sourceFile);
 
             // 验证文件是否成功创建
-            if (!sourceFile.exists()) {
-                throw new BusinessException(500, "文件创建失败：文件不存在");
-            }
-
-            if (sourceFile.length() == 0) {
-                throw new BusinessException(500, "文件创建失败：文件大小为0");
-            }
+            validateFileCreation(sourceFile);
 
             logger.info("文件创建成功: {} (大小: {} bytes)", sourceFile.getAbsolutePath(), sourceFile.length());
+            return sourceFilePath;
 
         } catch (IOException e) {
             logger.error("文件保存失败: {}", e.getMessage(), e);
-            // 尝试清理可能创建的不完整文件
-            if (sourceFile.exists()) {
-                try {
-                    Files.delete(sourceFilePath);
-                    logger.info("清理不完整的文件: {}", sourceFile.getAbsolutePath());
-                } catch (IOException cleanupEx) {
-                    logger.warn("清理不完整文件失败: {}", sourceFile.getAbsolutePath(), cleanupEx);
-                }
-            }
+            cleanupIncompleteFile(sourceFilePath);
             throw new BusinessException(500, "文件保存失败：" + e.getMessage(), e);
         }
+    }
 
-        String content;
+
+    /**
+     * 解析永久目录路径
+     */
+    private Path resolvePermanentPath(String permanentDir) {
+        if (permanentDir.startsWith("E:") || permanentDir.startsWith("D:") || permanentDir.startsWith("C:")) {
+            // Windows绝对路径
+            return Paths.get(permanentDir).normalize();
+        } else if (permanentDir.startsWith("/")) {
+            // Unix绝对路径
+            return Paths.get(permanentDir).normalize();
+        } else {
+            // 相对路径，转换为绝对路径
+            return Paths.get(System.getProperty("user.dir"), permanentDir).normalize();
+        }
+    }
+
+
+    /**
+     * 创建目录（如果不存在）
+     */
+    private void createDirectoryIfNotExists(Path permanentPath) {
+        if (!Files.exists(permanentPath)) {
+            try {
+                Files.createDirectories(permanentPath);
+                logger.info("创建目录: {}", permanentPath.toAbsolutePath());
+            } catch (IOException e) {
+                logger.error("创建目录失败: {}", permanentPath.toAbsolutePath(), e);
+                throw new BusinessException(500, "创建目录失败：" + e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * 验证目录权限
+     */
+    private void validateDirectoryPermissions(Path permanentPath) {
+        if (!Files.isDirectory(permanentPath) || !Files.isWritable(permanentPath)) {
+            throw new BusinessException(500, "目录不可写或不是目录: " + permanentPath.toAbsolutePath());
+        }
+    }
+
+
+    /**
+     * 验证文件创建
+     */
+    private void validateFileCreation(File sourceFile) {
+        if (!sourceFile.exists()) {
+            throw new BusinessException(500, "文件创建失败：文件不存在");
+        }
+        if (sourceFile.length() == 0) {
+            throw new BusinessException(500, "文件创建失败：文件大小为0");
+        }
+    }
+
+    /**
+     * 清理不完整的文件
+     */
+    private void cleanupIncompleteFile(Path sourceFilePath) {
         try {
-            content = documentTools.extractTextFromPath(sourceFile.getAbsolutePath());
+            if (Files.exists(sourceFilePath)) {
+                Files.delete(sourceFilePath);
+                logger.info("清理不完整的文件: {}", sourceFilePath);
+            }
+        } catch (IOException cleanupEx) {
+            logger.warn("清理不完整文件失败: {}", sourceFilePath, cleanupEx);
+        }
+    }
+
+    /**
+     * 提取文件内容
+     */
+    private String extractFileContent(Path sourceFile) {
+        try {
+            String content = documentTools.extractTextFromPath(sourceFile.toAbsolutePath().toString());
+            if (content == null || content.trim().isEmpty()) {
+                throw new BusinessException(500, "文件内容为空或提取失败");
+            }
+            logger.info("文件内容提取成功，长度: {} 字符", content.length());
+            return content;
         } catch (Exception e) {
             logger.error("文件内容提取失败: {}", e.getMessage(), e);
             throw new BusinessException(500, "文件内容提取失败：" + e.getMessage(), e);
         }
+    }
 
-        
-        logger.info("文件已保存到永久目录: {}", sourceFile.getAbsolutePath());
-
-        //上传到dify知识库中
-        //获取dify知识库标识id
+    /**
+     * 上传到 Dify
+     */
+    private String uploadToDify(TKnowledgeBase kb, Path sourceFile) {
         String kbId = kb.getBaseId();
         if (kbId == null || kbId.isEmpty()) {
             throw new BusinessException(400, "knowledgeBase.baseId 不能为空");
         }
-        //定义ducumentId，从存入dify之后响应中获取
-        String difyDocmentId;
-        try{
-            difyDocmentId = difySyncService.createDocumentByFile(kbId,sourceFile);
+
+        try {
+            logger.info("开始上传到 Dify，知识库ID: {}", kbId);
+            String difyDocumentId = difySyncService.createDocumentByFile(kbId, sourceFile.toFile());
+            logger.info("Dify 上传成功，文档ID: {}", difyDocumentId);
+            return difyDocumentId;
         } catch (Exception e) {
+            logger.error("Dify 上传失败: {}", e.getMessage(), e);
             throw new BusinessException("Dify创建文档失败：" + e.getMessage());
         }
-
-
-        TKnowledgeFile knowledgeFile = knowledgeFileService.saveFileInfo(
-                file,
-                permanentPath.toString(),
-                1L//默认userId后续对接user模块后实现真正的获取
-        );
-
-        //组装实体并保存
-        TKnowledgeDocument doc = new TKnowledgeDocument();
-        doc.setKbId(kb.getId());//TKnowledgeDocument的KbId对应TKnowledgeBase的baseId,都是dify中用于标识的id，而非数据库或者ES中id（自增Long）
-        doc.setCategoryId(categoryId);
-        doc.setContent(content);
-        doc.setTitle(originalName);
-        doc.setDocSuffix(suffix);
-        doc.setProcessingStatus(1);
-        doc.setDocStatus(1);
-        doc.setDelStatus(0);
-        doc.setDocType(0);
-        doc.setFileId(knowledgeFile.getId());
-        doc.setDifyDocumentId(difyDocmentId);//需要先上传到dify接受返回值才能填写
-        doc.setCreatedAt(LocalDateTime.now());
-        doc.setUpdatedAt(LocalDateTime.now());
-
-
-
-
-        boolean mysqlSaved = this.save(doc);
-        if (!mysqlSaved) {
-            throw new BusinessException(500, "文档保存失败");
-        }
-
-        // ES同步
-        Long id = doc.getId();
-        //处理elasticsearch的文档存储
-        ESKnowledgeDocument esDocument = new ESKnowledgeDocument(id+"",file.getOriginalFilename(),content);
-        try{
-            elasticsearchSyncService.syncDocumentToEs(esDocument);
-        }catch (Exception e){
-            throw new RuntimeException("文档保存失败:"+e.getMessage(),e);
-        }
-
-        return doc;
     }
+
+    /**
+     * 保存文件信息到数据库
+     */
+    private TKnowledgeFile saveFileInfo(MultipartFile file, Path sourceFile) {
+        try {
+            TKnowledgeFile knowledgeFile = knowledgeFileService.saveFileInfo(
+                    file,
+                    sourceFile.getParent().toString(),
+                    1L // 默认userId后续对接user模块后实现真正的获取
+            );
+            logger.info("文件信息保存成功，文件ID: {}", knowledgeFile.getId());
+            return knowledgeFile;
+        } catch (Exception e) {
+            logger.error("文件信息保存失败: {}", e.getMessage(), e);
+            throw new BusinessException(500, "文件信息保存失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 保存文档信息到数据库
+     */
+    private TKnowledgeDocument saveDocumentInfo(TKnowledgeBase kb, Long categoryId, String content,
+                                                String originalName, String suffix, TKnowledgeFile knowledgeFile,
+                                                String difyDocumentId) {
+        try {
+            TKnowledgeDocument doc = new TKnowledgeDocument();
+            doc.setKbId(kb.getId());
+            doc.setCategoryId(categoryId);
+            doc.setContent(content);
+            doc.setTitle(originalName);
+            doc.setDocSuffix(suffix);
+            doc.setProcessingStatus(1); // 1: 处理完成
+            doc.setDocStatus(1);
+            doc.setDelStatus(0);
+            doc.setDocType(0);
+            doc.setFileId(knowledgeFile.getId());
+            doc.setDifyDocumentId(difyDocumentId);
+            doc.setCreatedAt(LocalDateTime.now());
+            doc.setUpdatedAt(LocalDateTime.now());
+
+            boolean mysqlSaved = this.save(doc);
+            if (!mysqlSaved) {
+                throw new BusinessException(500, "文档保存失败");
+            }
+
+            logger.info("文档信息保存成功，文档ID: {}", doc.getId());
+            return doc;
+        } catch (Exception e) {
+            logger.error("文档信息保存失败: {}", e.getMessage(), e);
+            throw new BusinessException(500, "文档信息保存失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 同步到 Elasticsearch
+     * 使用 @Async 注解，不影响主事务
+     */
+    public void syncToElasticsearch(TKnowledgeDocument doc, String content) {
+        try {
+            logger.info("开始异步同步到 Elasticsearch，文档ID: {}", doc.getId());
+
+            ESKnowledgeDocument esDocument = new ESKnowledgeDocument(
+                    doc.getId().toString(),
+                    doc.getTitle(),
+                    content
+            );
+
+            boolean syncResult = elasticsearchSyncService.syncDocumentToEs(esDocument);
+
+            if (!syncResult) {
+                throw new BusinessException(500, "Elasticsearch 同步失败");
+            }
+
+            logger.info("Elasticsearch 同步成功，文档ID: {}", doc.getId());
+        } catch (Exception e) {
+            logger.error("Elasticsearch 同步失败，文档ID: {}, 错误: {}", doc.getId(), e.getMessage(), e);
+            throw new BusinessException(500, "Elasticsearch 同步失败：" + e.getMessage(), e);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     //更新

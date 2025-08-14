@@ -74,6 +74,11 @@ CREATE TABLE `t_knowledge_document` (
 PRIMARY KEY(`id`) 
 ) COMMENT='知识文档、知识';
 
+补充: ALTER TABLE t_knowledge_document
+ADD COLUMN file_md5 VARCHAR(64) NOT NULL COMMENT '文件MD5';
+CREATE UNIQUE INDEX uk_kb_filemd5 ON t_knowledge_document (kb_id, file_md5);
+
+
 
 CREATE TABLE `t_knowledge_document_segment` ( 
 `id` INT NOT NULL AUTO_INCREMENT UNIQUE, 
