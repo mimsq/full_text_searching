@@ -32,6 +32,10 @@ spring:
         id-type: auto
         table-prefix: t_
     mapper-locations: classpath*:mapper/**/*Mapper.xml
+# 事务管理配置
+  transaction:
+    default-timeout: 30s
+    rollback-on-commit-failure: true
 
 logging:
   level:
