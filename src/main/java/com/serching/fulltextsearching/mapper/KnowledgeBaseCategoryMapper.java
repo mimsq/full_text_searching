@@ -9,6 +9,5 @@ import java.util.List;
 
 @Mapper
 public interface KnowledgeBaseCategoryMapper extends BaseMapper<TKnowledgeBaseCategory> {
-    @Select("select * from t_knowledge_base_category where kb_id = #{knowledgeBaseId} order by id")
     List<TKnowledgeBaseCategory> selectByKbId(Long knowledgeBaseId);
 }

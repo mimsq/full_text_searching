@@ -5,11 +5,20 @@
 
     <!-- 批量插入 -->
     <insert id="insertBatch">
-        INSERT INTO t_knowledge_base_member (kb_id, user_id, member_type, created_at, updated_at)
+        INSERT INTO t_knowledge_base_member (kb_id, user_id, member_type, created_by, created_at, updated_by, updated_at)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.kbId}, #{item.userId}, #{item.memberType}, NOW(), NOW())
+            (#{item.kbId}, #{item.userId}, #{item.memberType}, #{item.createdBy}, #{item.createdAt}, #{item.updatedBy}, #{item.updatedAt})
         </foreach>
     </insert>
 
+    <!-- 更新成员类型 -->
+    <update id="updateMemberType">
+        UPDATE t_knowledge_base_member
+        SET member_type = #{memberType},
+            updated_by = #{updatedBy},
+            updated_at = #{updatedAt}
+        WHERE kb_id = #{kbId}
+          AND user_id = #{userId}
+    </update>
 </mapper>

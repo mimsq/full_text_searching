@@ -4,18 +4,39 @@ import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.common.Result;
 import com.serching.fulltextsearching.entity.TKnowledgeBase;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 @RestController
 @RequestMapping("/knowledge")
+@Validated
+@Api(tags = "知识库管理接口")
 public class KnowledgeBaseController {
 
     @Autowired
     private KnowledgeBaseService knowledgeService;
 
     @PostMapping("/create")
-    public Result<Void> createKnowledge(@RequestParam String name, @RequestParam(required = false) String coverImagePath, @RequestParam(defaultValue = "1") Integer scopeType, @RequestParam(required = false) String descriptionInfo){
+    @ApiOperation("创建知识库")
+    public Result<Void> createKnowledge(
+            @ApiParam(value = "知识库名称", required = true)
+            @RequestParam @NotBlank(message = "知识库名称不能为空") String name,
+            @ApiParam(value = "封面图片路径(可选)")
+            @RequestParam(required = false) String coverImagePath,
+            @ApiParam(value = "权限类型(1-私有,2-公开)", required = true, example = "1")
+            @RequestParam(defaultValue = "1") @NotNull(message = "权限类型不能为空")
+            @Min(value = 1, message = "权限类型只能是1或2") @Max(value = 2, message = "权限类型只能是1或2") Integer scopeType,
+            @ApiParam(value = "描述信息(可选)")
+            @RequestParam(required = false) String descriptionInfo){
         try {
             knowledgeService.createKnowledge(name, coverImagePath, scopeType, descriptionInfo);
             return Result.success();
@@ -25,7 +46,10 @@ public class KnowledgeBaseController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public Result<Void> deleteKnowledge(@PathVariable Long id){
+    @ApiOperation("删除知识库")
+    public Result<Void> deleteKnowledge(
+            @ApiParam(value = "知识库ID", required = true)
+            @PathVariable @NotNull(message = "知识库ID不能为空") Long id){
         try {
             knowledgeService.deleteKnowledge(id);
             return Result.success();
@@ -35,7 +59,10 @@ public class KnowledgeBaseController {
     }
 
     @GetMapping("/detail/{id}")
-    public Result<TKnowledgeBase> getKnowledgeDetail(@PathVariable Long id){
+    @ApiOperation("获取知识库详情")
+    public Result<TKnowledgeBase> getKnowledgeDetail(
+            @ApiParam(value = "知识库ID", required = true)
+            @PathVariable @NotNull(message = "知识库ID不能为空") Long id){
         try {
             TKnowledgeBase tKnowledgeBase = knowledgeService.getKnowledgeDetail(id);
             return Result.success(tKnowledgeBase);
@@ -45,7 +72,19 @@ public class KnowledgeBaseController {
     }
 
     @PostMapping("/update/{id}")
-    public Result<Void> updateKnowledge(@PathVariable String id, @RequestParam String name,@RequestParam(required = false) String coverImagePath, @RequestParam(defaultValue = "1") Integer scopeType, @RequestParam(required = false) String descriptionInfo){
+    @ApiOperation("更新知识库")
+    public Result<Void> updateKnowledge(
+            @ApiParam(value = "知识库ID", required = true)
+            @PathVariable @NotBlank(message = "知识库ID不能为空") String id,
+            @ApiParam(value = "新知识库名称", required = true)
+            @RequestParam @NotBlank(message = "知识库名称不能为空") String name,
+            @ApiParam(value = "封面图片路径(可选)")
+            @RequestParam(required = false) String coverImagePath,
+            @ApiParam(value = "权限类型(1-私有,2-公开)", required = true)
+            @RequestParam(defaultValue = "1") @NotNull(message = "权限类型不能为空")
+            @Min(1) @Max(2) Integer scopeType,
+            @ApiParam(value = "描述信息(可选)")
+            @RequestParam(required = false) String descriptionInfo){
         try {
             knowledgeService.updateKnowledge(id, name, coverImagePath, scopeType, descriptionInfo);
             return Result.success();
@@ -55,9 +94,12 @@ public class KnowledgeBaseController {
     }
 
     @GetMapping("/list")
+    @ApiOperation("获取知识库列表")
     public Result<PageResult<TKnowledgeBase>> getKnowledgeList(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
+            @ApiParam(value = "页码(默认1)", example = "1")
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码不能小于1") Integer page,
+            @ApiParam(value = "每页条数(默认10)", example = "10")
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "每页条数不能小于1") Integer size
     ){
         try {
             PageResult<TKnowledgeBase> result = knowledgeService.getKnowledgeList(page, size);
@@ -68,7 +110,13 @@ public class KnowledgeBaseController {
     }
 
     @PostMapping("/setPermission")
-    public Result<Void> setPermission(@RequestParam String id, @RequestParam Integer scopeType){
+    @ApiOperation("设置知识库权限")
+    public Result<Void> setPermission(
+            @ApiParam(value = "知识库ID", required = true)
+            @RequestParam @NotBlank(message = "知识库ID不能为空") String id,
+            @ApiParam(value = "权限类型(1-私有,2-公开)", required = true)
+            @RequestParam @NotNull(message = "权限类型不能为空")
+            @Min(value = 1, message = "权限类型只能是1或2") @Max(value = 2, message = "权限类型只能是1或2") Integer scopeType){
         try {
             knowledgeService.setPermission(id, scopeType);
             return Result.success();
@@ -78,7 +126,10 @@ public class KnowledgeBaseController {
     }
 
     @PostMapping("/getPermission")
-    public Result<Integer> getPermission(@RequestParam String knowledgeBaseId){
+    @ApiOperation("获取知识库权限")
+    public Result<Integer> getPermission(
+            @ApiParam(value = "知识库ID", required = true)
+            @RequestParam @NotBlank(message = "知识库ID不能为空") String knowledgeBaseId){
         try {
             Integer permission = knowledgeService.getPermission(knowledgeBaseId);
             return Result.success(permission);

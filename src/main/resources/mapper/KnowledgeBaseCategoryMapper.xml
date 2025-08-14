@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.serching.fulltextsearching.mapper.KnowledgeBaseCategoryMapper">
+
+    <select id="selectByKbId" parameterType="java.lang.Long" resultType="com.serching.fulltextsearching.entity.TKnowledgeBaseCategory">
+        select * from t_knowledge_base_category
+        where kb_id = #{knowledgeBaseId}
+        order by id
+    </select>
+
+</mapper>

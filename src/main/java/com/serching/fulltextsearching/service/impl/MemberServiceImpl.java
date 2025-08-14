@@ -26,6 +26,10 @@ public class MemberServiceImpl implements MemberService {
             tKnowledgeBaseMember.setKbId(kbId);
             tKnowledgeBaseMember.setUserId(Long.valueOf(member.getTargetId()));
             tKnowledgeBaseMember.setMemberType(Integer.valueOf(member.getPermission()));
+            tKnowledgeBaseMember.setCreatedBy(1L);
+            tKnowledgeBaseMember.setUpdatedBy(1L);
+            tKnowledgeBaseMember.setCreatedAt(LocalDateTime.now());
+            tKnowledgeBaseMember.setUpdatedAt(LocalDateTime.now());
             return tKnowledgeBaseMember;
         }).collect(Collectors.toList());
         knowledgeBaseMemberMapper.insertBatch(members);
