@@ -1,7 +1,6 @@
 package com.serching.fulltextsearching.controller;
 
 import com.serching.fulltextsearching.common.Result;
-import com.serching.fulltextsearching.entity.TOperationLog;
 import com.serching.fulltextsearching.service.OperationLogService;
 import com.serching.fulltextsearching.vo.OperationLogVo;
 import io.swagger.annotations.Api;

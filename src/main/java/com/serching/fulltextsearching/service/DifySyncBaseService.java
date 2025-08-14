@@ -1,14 +1,14 @@
 package com.serching.fulltextsearching.service;
 
-import com.serching.fulltextsearching.entity.TKnowledgeBase;
+import com.serching.fulltextsearching.entity.KnowledgeBase;
 
 public interface DifySyncBaseService {
     /**
      * 创建 Dify 知识库
-     * @param tKnowledgeBase 知识库参数
+     * @param knowledgeBase 知识库参数
      * @return 创建的知识库实体
      */
-    String createKnowledgeInDify(TKnowledgeBase tKnowledgeBase);
+    String createKnowledgeInDify(KnowledgeBase knowledgeBase);
 
     /**
      * 删除 Dify 知识库
@@ -19,8 +19,8 @@ public interface DifySyncBaseService {
 
     /**
      * 更新 Dify 知识库
-     * @param tKnowledgeBase 知识库参数
+     * @param knowledgeBase 知识库参数
      * @return 是否更新成功
      */
-    boolean updateKnowledgeInDify(TKnowledgeBase tKnowledgeBase);
+    boolean updateKnowledgeInDify(KnowledgeBase knowledgeBase);
 }

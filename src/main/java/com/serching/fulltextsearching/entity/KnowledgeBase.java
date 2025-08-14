@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 @TableName("t_knowledge_base")
-public class TKnowledgeBase {
+public class KnowledgeBase {
     @TableId(type = IdType.AUTO)
     private Long id;
     private String title; // 知识库名称

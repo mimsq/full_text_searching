@@ -2,7 +2,7 @@ package com.serching.fulltextsearching.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.serching.fulltextsearching.dto.MemberKbPermissionDto;
-import com.serching.fulltextsearching.entity.TKnowledgeBaseMember;
+import com.serching.fulltextsearching.entity.KnowledgeBaseMember;
 import com.serching.fulltextsearching.mapper.KnowledgeBaseMemberMapper;
 import com.serching.fulltextsearching.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,25 +21,25 @@ public class MemberServiceImpl implements MemberService {
     @Override
     public void saveBatch(MemberKbPermissionDto dto) {
         Long kbId = dto.getKnowledgeBaseId();
-        List<TKnowledgeBaseMember> members = dto.getAccessControls().stream().map(member -> {
-            TKnowledgeBaseMember tKnowledgeBaseMember = new TKnowledgeBaseMember();
-            tKnowledgeBaseMember.setKbId(kbId);
-            tKnowledgeBaseMember.setUserId(Long.valueOf(member.getTargetId()));
-            tKnowledgeBaseMember.setMemberType(Integer.valueOf(member.getPermission()));
-            tKnowledgeBaseMember.setCreatedBy(1L);
-            tKnowledgeBaseMember.setUpdatedBy(1L);
-            tKnowledgeBaseMember.setCreatedAt(LocalDateTime.now());
-            tKnowledgeBaseMember.setUpdatedAt(LocalDateTime.now());
-            return tKnowledgeBaseMember;
+        List<KnowledgeBaseMember> members = dto.getAccessControls().stream().map(member -> {
+            KnowledgeBaseMember knowledgeBaseMember = new KnowledgeBaseMember();
+            knowledgeBaseMember.setKbId(kbId);
+            knowledgeBaseMember.setUserId(Long.valueOf(member.getTargetId()));
+            knowledgeBaseMember.setMemberType(Integer.valueOf(member.getPermission()));
+            knowledgeBaseMember.setCreatedBy(1L);
+            knowledgeBaseMember.setUpdatedBy(1L);
+            knowledgeBaseMember.setCreatedAt(LocalDateTime.now());
+            knowledgeBaseMember.setUpdatedAt(LocalDateTime.now());
+            return knowledgeBaseMember;
         }).collect(Collectors.toList());
         knowledgeBaseMemberMapper.insertBatch(members);
     }
 
     @Override
     public void delete(MemberKbPermissionDto dto) {
-        knowledgeBaseMemberMapper.delete(new LambdaQueryWrapper<TKnowledgeBaseMember>()
-                .eq(TKnowledgeBaseMember::getKbId, dto.getKnowledgeBaseId())
-                .eq(TKnowledgeBaseMember::getUserId, Long.valueOf(dto.getAccessControls().get(0).getTargetId())));
+        knowledgeBaseMemberMapper.delete(new LambdaQueryWrapper<KnowledgeBaseMember>()
+                .eq(KnowledgeBaseMember::getKbId, dto.getKnowledgeBaseId())
+                .eq(KnowledgeBaseMember::getUserId, Long.valueOf(dto.getAccessControls().get(0).getTargetId())));
     }
 
     @Override
@@ -49,10 +49,10 @@ public class MemberServiceImpl implements MemberService {
 
     //给下面的sql查询加上分页查询的功能
     @Override
-    public List<TKnowledgeBaseMember> getMemberList(Long kbId, Integer pageNum, Integer pageSize) {
-        LambdaQueryWrapper<TKnowledgeBaseMember> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(TKnowledgeBaseMember::getKbId, kbId);
-        queryWrapper.orderByDesc(TKnowledgeBaseMember::getId);
+    public List<KnowledgeBaseMember> getMemberList(Long kbId, Integer pageNum, Integer pageSize) {
+        LambdaQueryWrapper<KnowledgeBaseMember> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(KnowledgeBaseMember::getKbId, kbId);
+        queryWrapper.orderByDesc(KnowledgeBaseMember::getId);
         queryWrapper.last("limit " + (pageNum - 1) * pageSize + "," + pageSize);
         return knowledgeBaseMemberMapper.selectList(queryWrapper);
     }

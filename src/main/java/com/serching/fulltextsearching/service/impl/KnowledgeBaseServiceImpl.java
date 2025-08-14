@@ -4,11 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.serching.fulltextsearching.common.PageResult;
-import com.serching.fulltextsearching.entity.TKnowledgeBase;
-import com.serching.fulltextsearching.mapper.TKnowledgeBaseMapper;
+import com.serching.fulltextsearching.entity.KnowledgeBase;
+import com.serching.fulltextsearching.mapper.KnowledgeBaseMapper;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,11 +19,11 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     private DifySyncBaseServiceImpl difySyncBaseService;
 
     @Autowired
-    private TKnowledgeBaseMapper knowledgeBaseMapper;
+    private KnowledgeBaseMapper knowledgeBaseMapper;
 
     @Override
     public void createKnowledge(String name, String coverImagePath, Integer scopeType, String descriptionInfo) {
-        TKnowledgeBase knowledgeBase = new TKnowledgeBase();
+        KnowledgeBase knowledgeBase = new KnowledgeBase();
         knowledgeBase.setTitle(name);
         knowledgeBase.setCoverImagePath(coverImagePath);
         knowledgeBase.setScopeType(scopeType);
@@ -47,7 +46,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     @Override
     public void deleteKnowledge(Long id) {
         // 1. 查询数据库获取Dify知识库ID
-        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
         if (knowledgeBase == null) {
             throw new RuntimeException("知识库不存在");
         }
@@ -65,9 +64,9 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
 
     @Override
-    public TKnowledgeBase getKnowledgeDetail(Long id) {
+    public KnowledgeBase getKnowledgeDetail(Long id) {
         //从数据库中查出有关信息并返回
-        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
         if (knowledgeBase == null) {
             throw new RuntimeException("知识库不存在");
         }
@@ -77,7 +76,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     @Override
     public void updateKnowledge(String id, String name, String coverImagePath, Integer scopeType, String descriptionInfo) {
         // 1. 查询数据库获取知识库信息
-        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
         if (knowledgeBase == null) {
             throw new RuntimeException("知识库不存在");
         }
@@ -105,18 +104,18 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
-    public PageResult<TKnowledgeBase> getKnowledgeList(int page, int size) {
+    public PageResult<KnowledgeBase> getKnowledgeList(int page, int size) {
         // 创建分页对象
-        Page<TKnowledgeBase> pageParam = new Page<>(page, size);
+        Page<KnowledgeBase> pageParam = new Page<>(page, size);
 
         // 构建查询条件
-        LambdaQueryWrapper<TKnowledgeBase> queryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<KnowledgeBase> queryWrapper = new LambdaQueryWrapper<>();
 
         // 执行分页查询
-        IPage<TKnowledgeBase> resultPage = knowledgeBaseMapper.selectPage(pageParam, queryWrapper);
+        IPage<KnowledgeBase> resultPage = knowledgeBaseMapper.selectPage(pageParam, queryWrapper);
 
         // 封装返回结果
-        PageResult<TKnowledgeBase> pageResult = new PageResult<>();
+        PageResult<KnowledgeBase> pageResult = new PageResult<>();
         pageResult.setRecords(resultPage.getRecords());
         pageResult.setTotal(resultPage.getTotal());
         pageResult.setSize(resultPage.getSize());
@@ -129,7 +128,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     @Override
     public void setPermission(String id, int scopeType) {
         //操作数据库，将scopeType更新为scopeType
-        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
         if (knowledgeBase == null) {
             throw new RuntimeException("知识库不存在");
         }
@@ -139,7 +138,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     @Override
     public Integer getPermission(String knowledgeBaseId) {
-        TKnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(knowledgeBaseId);
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(knowledgeBaseId);
         if (knowledgeBase == null) {
             throw new RuntimeException("知识库不存在");
         }

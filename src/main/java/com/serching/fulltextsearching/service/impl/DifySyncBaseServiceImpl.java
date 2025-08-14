@@ -3,9 +3,8 @@ package com.serching.fulltextsearching.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serching.fulltextsearching.client.DifyApiClient;
-import com.serching.fulltextsearching.entity.TKnowledgeBase;
+import com.serching.fulltextsearching.entity.KnowledgeBase;
 import com.serching.fulltextsearching.service.DifySyncBaseService;
-import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,23 +22,23 @@ public class DifySyncBaseServiceImpl implements DifySyncBaseService {
     private boolean syncEnabled;
 
     @Override
-    public String createKnowledgeInDify(TKnowledgeBase tKnowledgeBase) {
+    public String createKnowledgeInDify(KnowledgeBase knowledgeBase) {
         if (!syncEnabled) {
             log.info("Dify 同步已禁用，跳过创建知识库操作");
             return null;
         }
         try {
-            log.info("开始同步创建知识库到 Dify，名称: {}", tKnowledgeBase.getTitle());
+            log.info("开始同步创建知识库到 Dify，名称: {}", knowledgeBase.getTitle());
 
-            String response = difyApiClient.createDataset(tKnowledgeBase.getTitle(), tKnowledgeBase.getDescriptionInfo());
+            String response = difyApiClient.createDataset(knowledgeBase.getTitle(), knowledgeBase.getDescriptionInfo());
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(response);
             String difyBaseId = jsonNode.get("id").asText();
-            log.info("知识库同步创建到 Dify 成功，名称: {}, Dify 知识库ID: {}", tKnowledgeBase.getTitle(), difyBaseId);
+            log.info("知识库同步创建到 Dify 成功，名称: {}, Dify 知识库ID: {}", knowledgeBase.getTitle(), difyBaseId);
             return difyBaseId;
 
         } catch (IOException e) {
-            log.error("知识库同步创建到 Dify 失败，名称: {}, 错误: {}", tKnowledgeBase.getTitle(), e.getMessage(), e);
+            log.error("知识库同步创建到 Dify 失败，名称: {}, 错误: {}", knowledgeBase.getTitle(), e.getMessage(), e);
             throw new RuntimeException("创建知识库失败: " + e.getMessage(), e);
         }
     }
@@ -63,19 +62,19 @@ public class DifySyncBaseServiceImpl implements DifySyncBaseService {
     }
 
     @Override
-    public boolean updateKnowledgeInDify(TKnowledgeBase tKnowledgeBase) {
+    public boolean updateKnowledgeInDify(KnowledgeBase knowledgeBase) {
         if (!syncEnabled) {
-            log.info("Dify 同步已禁用，跳过更新知识库操作，Dify知识库ID: {}", tKnowledgeBase.getBaseId());
+            log.info("Dify 同步已禁用，跳过更新知识库操作，Dify知识库ID: {}", knowledgeBase.getBaseId());
             return true;
         }
         try {
-            log.info("开始同步更新知识库到 Dify，Dify 知识库ID: {}", tKnowledgeBase.getBaseId());
-            difyApiClient.updateDataset(tKnowledgeBase.getBaseId(), tKnowledgeBase.getTitle(), tKnowledgeBase.getDescriptionInfo());
-            log.info("知识库同步更新到 Dify 成功，Dify 知识库ID: {}", tKnowledgeBase.getBaseId());
+            log.info("开始同步更新知识库到 Dify，Dify 知识库ID: {}", knowledgeBase.getBaseId());
+            difyApiClient.updateDataset(knowledgeBase.getBaseId(), knowledgeBase.getTitle(), knowledgeBase.getDescriptionInfo());
+            log.info("知识库同步更新到 Dify 成功，Dify 知识库ID: {}", knowledgeBase.getBaseId());
             return true;
 
         } catch (IOException e) {
-            log.error("知识库同步更新到 Dify 失败，Dify 知识库ID: {}, 错误: {}", tKnowledgeBase.getBaseId(), e.getMessage(), e);
+            log.error("知识库同步更新到 Dify 失败，Dify 知识库ID: {}, 错误: {}", knowledgeBase.getBaseId(), e.getMessage(), e);
             return false;
         }
     }

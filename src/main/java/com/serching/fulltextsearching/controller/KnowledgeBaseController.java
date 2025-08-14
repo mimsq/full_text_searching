@@ -2,7 +2,7 @@ package com.serching.fulltextsearching.controller;
 
 import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.common.Result;
-import com.serching.fulltextsearching.entity.TKnowledgeBase;
+import com.serching.fulltextsearching.entity.KnowledgeBase;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -60,12 +60,12 @@ public class KnowledgeBaseController {
 
     @GetMapping("/detail/{id}")
     @ApiOperation("获取知识库详情")
-    public Result<TKnowledgeBase> getKnowledgeDetail(
+    public Result<KnowledgeBase> getKnowledgeDetail(
             @ApiParam(value = "知识库ID", required = true)
             @PathVariable @NotNull(message = "知识库ID不能为空") Long id){
         try {
-            TKnowledgeBase tKnowledgeBase = knowledgeService.getKnowledgeDetail(id);
-            return Result.success(tKnowledgeBase);
+            KnowledgeBase knowledgeBase = knowledgeService.getKnowledgeDetail(id);
+            return Result.success(knowledgeBase);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
@@ -95,14 +95,14 @@ public class KnowledgeBaseController {
 
     @GetMapping("/list")
     @ApiOperation("获取知识库列表")
-    public Result<PageResult<TKnowledgeBase>> getKnowledgeList(
+    public Result<PageResult<KnowledgeBase>> getKnowledgeList(
             @ApiParam(value = "页码(默认1)", example = "1")
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码不能小于1") Integer page,
             @ApiParam(value = "每页条数(默认10)", example = "10")
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "每页条数不能小于1") Integer size
     ){
         try {
-            PageResult<TKnowledgeBase> result = knowledgeService.getKnowledgeList(page, size);
+            PageResult<KnowledgeBase> result = knowledgeService.getKnowledgeList(page, size);
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(e.getMessage());

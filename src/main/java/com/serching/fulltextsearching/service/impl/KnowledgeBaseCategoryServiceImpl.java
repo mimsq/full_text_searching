@@ -1,17 +1,14 @@
 package com.serching.fulltextsearching.service.impl;
 
-import com.serching.fulltextsearching.entity.TKnowledgeBaseCategory;
-import com.serching.fulltextsearching.entity.TKnowledgeDocument;
+import com.serching.fulltextsearching.entity.KnowledgeBaseCategory;
 import com.serching.fulltextsearching.mapper.KnowledgeBaseCategoryMapper;
-import com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper;
+import com.serching.fulltextsearching.mapper.KnowledgeDocumentMapper;
 import com.serching.fulltextsearching.service.KnowledgeBaseCategoryService;
 import com.serching.fulltextsearching.vo.DocumentGroupVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class KnowledgeBaseCategoryServiceImpl implements KnowledgeBaseCategoryService {
@@ -20,7 +17,7 @@ public class KnowledgeBaseCategoryServiceImpl implements KnowledgeBaseCategorySe
     private KnowledgeBaseCategoryMapper tKnowledgeBaseCategoryMapper;
 
     @Autowired
-    private TKnowledgeDocumentMapper tKnowledgeDocumentMapper;
+    private KnowledgeDocumentMapper knowledgeDocumentMapper;
 
     @Override
     public void createCategory(String name, Long knowledgeBaseId) {
@@ -31,14 +28,14 @@ public class KnowledgeBaseCategoryServiceImpl implements KnowledgeBaseCategorySe
         if (knowledgeBaseId == null) {
             throw new IllegalArgumentException("知识库不存在");
         }
-        TKnowledgeBaseCategory tKnowledgeBaseCategory = new TKnowledgeBaseCategory();
-        tKnowledgeBaseCategory.setKbId(knowledgeBaseId);
-        tKnowledgeBaseCategory.setName(name);
-        tKnowledgeBaseCategory.setCreatedBy(1L);
-        tKnowledgeBaseCategory.setCreatedAt(LocalDateTime.now());
-        tKnowledgeBaseCategory.setUpdatedBy(1L);
-        tKnowledgeBaseCategory.setUpdatedAt(LocalDateTime.now());
-        tKnowledgeBaseCategoryMapper.insert(tKnowledgeBaseCategory);
+        KnowledgeBaseCategory knowledgeBaseCategory = new KnowledgeBaseCategory();
+        knowledgeBaseCategory.setKbId(knowledgeBaseId);
+        knowledgeBaseCategory.setName(name);
+        knowledgeBaseCategory.setCreatedBy(1L);
+        knowledgeBaseCategory.setCreatedAt(LocalDateTime.now());
+        knowledgeBaseCategory.setUpdatedBy(1L);
+        knowledgeBaseCategory.setUpdatedAt(LocalDateTime.now());
+        tKnowledgeBaseCategoryMapper.insert(knowledgeBaseCategory);
     }
 
     @Override
@@ -57,11 +54,11 @@ public class KnowledgeBaseCategoryServiceImpl implements KnowledgeBaseCategorySe
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("分组名称不能为空");
         }
-        TKnowledgeBaseCategory tKnowledgeBaseCategory = tKnowledgeBaseCategoryMapper.selectById(id);
-        tKnowledgeBaseCategory.setName(name);
-        tKnowledgeBaseCategory.setUpdatedBy(1L);
-        tKnowledgeBaseCategory.setUpdatedAt(LocalDateTime.now());
-        tKnowledgeBaseCategoryMapper.updateById(tKnowledgeBaseCategory);
+        KnowledgeBaseCategory knowledgeBaseCategory = tKnowledgeBaseCategoryMapper.selectById(id);
+        knowledgeBaseCategory.setName(name);
+        knowledgeBaseCategory.setUpdatedBy(1L);
+        knowledgeBaseCategory.setUpdatedAt(LocalDateTime.now());
+        tKnowledgeBaseCategoryMapper.updateById(knowledgeBaseCategory);
     }
 
     @Override
@@ -71,7 +68,7 @@ public class KnowledgeBaseCategoryServiceImpl implements KnowledgeBaseCategorySe
         }
         DocumentGroupVo documentGroupVo = new DocumentGroupVo();
         documentGroupVo.setCategoryList(tKnowledgeBaseCategoryMapper.selectByKbId(knowledgeBaseId));
-        documentGroupVo.setDocumentList(tKnowledgeDocumentMapper.selectByKbId(knowledgeBaseId, (pageNum-1)*pageSize, pageSize));
+        documentGroupVo.setDocumentList(knowledgeDocumentMapper.selectByKbId(knowledgeBaseId, (pageNum-1)*pageSize, pageSize));
         return documentGroupVo;
     }
 }

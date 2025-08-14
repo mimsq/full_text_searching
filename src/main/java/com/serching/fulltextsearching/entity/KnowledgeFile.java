@@ -5,14 +5,16 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("t_konwledge_base_outer_mapping")
-public class TKonwledgeBaseOuterMapping {
+@TableName("t_knowledge_file")
+public class KnowledgeFile {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private Long kbId;
-    private String outId; // 外部关联对象id
-    private String outType; // 外部系统类型:比如dify、ragflow
-    private String extendedInfo; // 外部额外配置信息
+    private String name; // 文件名
+    private String filePath; // 存储路径
+    private String suffix; // 后缀名
+    private Integer fileSzie; // 文件大小
+    private String md5; // 文件md5值
+    private Integer encryption; // 文件是否加密
     private Long createdBy; // 创建人
     private LocalDateTime createdAt;
     private Long updatedBy;

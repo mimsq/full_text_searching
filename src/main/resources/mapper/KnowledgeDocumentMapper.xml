@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper">
+<mapper namespace="com.serching.fulltextsearching.mapper.KnowledgeDocumentMapper">
 
     <!-- 根据知识库ID分页查询文档 -->
-    <select id="selectByKbId" resultType="com.serching.fulltextsearching.entity.TKnowledgeDocument">
+    <select id="selectByKbId" resultType="com.serching.fulltextsearching.entity.KnowledgeDocument">
         SELECT * FROM t_knowledge_document
         WHERE kb_id = #{knowledgeBaseId}
         ORDER BY category_id, id

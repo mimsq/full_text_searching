@@ -5,15 +5,13 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("t_operation_log")
-public class TOperationLog {
+@TableName("t_knowledge_document_segment")
+public class KnowledgeDocumentSegment {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String title; // 操作描述
-    private Integer operationType; // 操作类型
-    private Long objectId; // 操作对象id:如知识库id、知识文档id
-    private String objectType; // 知识库、知识、成员
-    private Long KbId;
+    private Long kbId; // 知识库id
+    private Long docId; // 文档id
+    private String content; // 文档切片内容
     private Long createdBy; // 创建人
     private LocalDateTime createdAt;
     private Long updatedBy;

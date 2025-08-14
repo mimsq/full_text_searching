@@ -1,8 +1,6 @@
 package com.serching.fulltextsearching.service;
 
-import com.serching.fulltextsearching.entity.TKnowledgeBase;
-import com.serching.fulltextsearching.entity.TKnowledgeDocument;
-import org.springframework.web.multipart.MultipartFile;
+import com.serching.fulltextsearching.entity.KnowledgeDocument;
 
 import java.io.File;
 
@@ -16,14 +14,14 @@ public interface DifySyncService {
      * @param document 要更新的文档
      * @return 是否更新成功
      */
-    boolean updateDocumentInDify(TKnowledgeDocument document);
+    boolean updateDocumentInDify(KnowledgeDocument document);
     
     /**
      * 从 Dify 知识库中删除文档
      * @param document 要删除的文档
      * @return 是否删除成功
      */
-    boolean removeDocumentFromDify(TKnowledgeDocument document);
+    boolean removeDocumentFromDify(KnowledgeDocument document);
 
     /**
      * 通过文件在Dify知识库创建文档

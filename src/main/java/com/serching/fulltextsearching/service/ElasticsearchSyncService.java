@@ -2,7 +2,6 @@ package com.serching.fulltextsearching.service;
 
 import com.serching.fulltextsearching.dto.EsSearchResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
-import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 
 public interface ElasticsearchSyncService {
     /**

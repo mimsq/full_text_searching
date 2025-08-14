@@ -1,7 +1,6 @@
 package com.serching.fulltextsearching.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.serching.fulltextsearching.entity.TOperationLog;
+import com.serching.fulltextsearching.entity.OperationLog;
 import com.serching.fulltextsearching.mapper.OperationLogMapper;
 import com.serching.fulltextsearching.service.OperationLogService;
 import com.serching.fulltextsearching.vo.OperationLogVo;
@@ -19,7 +18,7 @@ public class OperationLogServiceImpl implements OperationLogService {
 
     @Override
     public void addOperationLog(int operationType, Long objectId, Long kbId,Long createdBy) {
-        TOperationLog operationLog = new TOperationLog();
+        OperationLog operationLog = new OperationLog();
         operationLog.setOperationType(operationType);
         operationLog.setObjectId(objectId);
         operationLog.setKbId(kbId);

@@ -5,16 +5,13 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("t_knowledge_file")
-public class TKnowledgeFile {
+@TableName("t_knowledge_base_member")
+public class KnowledgeBaseMember {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String name; // 文件名
-    private String filePath; // 存储路径
-    private String suffix; // 后缀名
-    private Integer fileSzie; // 文件大小
-    private String md5; // 文件md5值
-    private Integer encryption; // 文件是否加密
+    private Long kbId; // 知识库id
+    private Long userId; // 用户id
+    private Integer memberType; // 成员类型:0：所有者(可管理)、1管理员(可编辑)3、普通成员(仅查看)
     private Long createdBy; // 创建人
     private LocalDateTime createdAt;
     private Long updatedBy;

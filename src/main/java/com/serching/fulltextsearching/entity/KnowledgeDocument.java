@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @TableName("t_knowledge_document")
-public class TKnowledgeDocument {
+public class KnowledgeDocument {
     /**
      * 主键ID
      */

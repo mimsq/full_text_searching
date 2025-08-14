@@ -1,6 +1,5 @@
 package com.serching.fulltextsearching.service;
 
-import com.serching.fulltextsearching.entity.TOperationLog;
 import com.serching.fulltextsearching.vo.OperationLogVo;
 
 import java.util.List;

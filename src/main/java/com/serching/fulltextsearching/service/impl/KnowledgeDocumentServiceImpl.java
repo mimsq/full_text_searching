@@ -6,19 +6,18 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.dto.EsSearchResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
-import com.serching.fulltextsearching.entity.TKnowledgeBase;
-import com.serching.fulltextsearching.entity.TKnowledgeDocument;
-import com.serching.fulltextsearching.entity.TKnowledgeFile;
+import com.serching.fulltextsearching.entity.KnowledgeBase;
+import com.serching.fulltextsearching.entity.KnowledgeDocument;
+import com.serching.fulltextsearching.entity.KnowledgeFile;
 import com.serching.fulltextsearching.exception.BusinessException;
-import com.serching.fulltextsearching.mapper.TKnowledgeDocumentMapper;
-import com.serching.fulltextsearching.mapper.TKnowledgeFileMapper;
+import com.serching.fulltextsearching.mapper.KnowledgeDocumentMapper;
+import com.serching.fulltextsearching.mapper.KnowledgeFileMapper;
 import com.serching.fulltextsearching.service.*;
 import com.serching.fulltextsearching.utils.DocumentTools;
 import com.serching.fulltextsearching.config.FileUploadConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,8 +36,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
-public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumentMapper, TKnowledgeDocument>
-        implements TKnowledgeDocumentService {
+public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentMapper, KnowledgeDocument>
+        implements KnowledgeDocumentService {
 
 
     @Autowired
@@ -57,17 +56,17 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     private ElasticsearchSyncService elasticsearchSyncService;
 
     @Autowired
-    private TKnowledgeFileMapper knowledgeFileMapper;
+    private KnowledgeFileMapper knowledgeFileMapper;
 
     @Autowired
-    private TKnowledgeFileService knowledgeFileService;
+    private KnowledgeFileService knowledgeFileService;
 
-    private static final Logger logger = LoggerFactory.getLogger(TKnowledgeDocumentServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(KnowledgeDocumentServiceImpl.class);
 
 
     @Override
     @Transactional(rollbackFor = Exception.class, timeout = 300)//5分钟超时
-    public TKnowledgeDocument uploadDocument(TKnowledgeBase kb, Long categoryId, MultipartFile file) throws IOException {
+    public KnowledgeDocument uploadDocument(KnowledgeBase kb, Long categoryId, MultipartFile file) throws IOException {
         logger.info("开始上传文档: {}", file.getOriginalFilename());
 
         try {
@@ -87,10 +86,10 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             String difyDocumentId = uploadToDify(kb, sourceFile);
 
             // 6) 保存文件信息到数据库
-            TKnowledgeFile knowledgeFile = saveFileInfo(file, sourceFile);
+            KnowledgeFile knowledgeFile = saveFileInfo(file, sourceFile);
 
             // 7) 保存文档信息到数据库
-            TKnowledgeDocument doc = saveDocumentInfo(kb, categoryId, content,
+            KnowledgeDocument doc = saveDocumentInfo(kb, categoryId, content,
                     file.getOriginalFilename(), suffix,
                     knowledgeFile, difyDocumentId);
 
@@ -106,11 +105,11 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         }
     }
 
-
+//下面是上传文档的方法，后续整合到一个类中
     /**
     * 参数校验
     */
-    private void validateUploadParameters(TKnowledgeBase kb,MultipartFile file){
+    private void validateUploadParameters(KnowledgeBase kb, MultipartFile file){
         if (kb == null|| kb.getId() == null){
             throw new BusinessException(400,"知识库或知识库id不能为空");
         }
@@ -119,11 +118,6 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             throw new BusinessException(400,"文件不能为空");
         }
     }
-
-
-
-
-
     /**
      * 检查文件格式
      */
@@ -270,7 +264,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     /**
      * 上传到 Dify
      */
-    private String uploadToDify(TKnowledgeBase kb, Path sourceFile) {
+    private String uploadToDify(KnowledgeBase kb, Path sourceFile) {
         String kbId = kb.getBaseId();
         if (kbId == null || kbId.isEmpty()) {
             throw new BusinessException(400, "knowledgeBase.baseId 不能为空");
@@ -290,9 +284,9 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     /**
      * 保存文件信息到数据库
      */
-    private TKnowledgeFile saveFileInfo(MultipartFile file, Path sourceFile) {
+    private KnowledgeFile saveFileInfo(MultipartFile file, Path sourceFile) {
         try {
-            TKnowledgeFile knowledgeFile = knowledgeFileService.saveFileInfo(
+            KnowledgeFile knowledgeFile = knowledgeFileService.saveFileInfo(
                     file,
                     sourceFile.getParent().toString(),
                     1L // 默认userId后续对接user模块后实现真正的获取
@@ -308,11 +302,11 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     /**
      * 保存文档信息到数据库
      */
-    private TKnowledgeDocument saveDocumentInfo(TKnowledgeBase kb, Long categoryId, String content,
-                                                String originalName, String suffix, TKnowledgeFile knowledgeFile,
-                                                String difyDocumentId) {
+    private KnowledgeDocument saveDocumentInfo(KnowledgeBase kb, Long categoryId, String content,
+                                               String originalName, String suffix, KnowledgeFile knowledgeFile,
+                                               String difyDocumentId) {
         try {
-            TKnowledgeDocument doc = new TKnowledgeDocument();
+            KnowledgeDocument doc = new KnowledgeDocument();
             doc.setKbId(kb.getId());
             doc.setCategoryId(categoryId);
             doc.setContent(content);
@@ -344,7 +338,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
      * 同步到 Elasticsearch
      * 使用 @Async 注解，不影响主事务
      */
-    public void syncToElasticsearch(TKnowledgeDocument doc, String content) {
+    public void syncToElasticsearch(KnowledgeDocument doc, String content) {
         try {
             logger.info("开始异步同步到 Elasticsearch，文档ID: {}", doc.getId());
 
@@ -391,41 +385,41 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
     //更新
     @Override
-    public TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument) {
+    public KnowledgeDocument updateDocument(KnowledgeDocument knowledgeDocument) {
 
-        logger.info("开始更新文档，接收到的数据: {}", tKnowledgeDocument);
+        logger.info("开始更新文档，接收到的数据: {}", knowledgeDocument);
 
         //验证必要字段
-        if (tKnowledgeDocument.getId() == null){
+        if (knowledgeDocument.getId() == null){
             throw new BusinessException(400,"文档ID不能为空");
         }
 
         //查询现有文档
-        TKnowledgeDocument existingDoc = this.getById(tKnowledgeDocument.getId());
+        KnowledgeDocument existingDoc = this.getById(knowledgeDocument.getId());
         if (existingDoc == null) {
             throw new BusinessException(404, "文档不存在");
         }
 
         // 检查内容是否真的改变了
         boolean contentChanged = false;
-        if (tKnowledgeDocument.getContent() != null &&
-                !tKnowledgeDocument.getContent().equals(existingDoc.getContent())) {
+        if (knowledgeDocument.getContent() != null &&
+                !knowledgeDocument.getContent().equals(existingDoc.getContent())) {
             contentChanged = true;
         }
 
         // 检查标题是否改变
         boolean titleChanged = false;
-        if (tKnowledgeDocument.getTitle() != null &&
-                !tKnowledgeDocument.getTitle().equals(existingDoc.getTitle())) {
+        if (knowledgeDocument.getTitle() != null &&
+                !knowledgeDocument.getTitle().equals(existingDoc.getTitle())) {
             titleChanged = true;
         }
 
         // 1.更新本地数据库
         //设置更新时间
-        tKnowledgeDocument.setUpdatedAt(LocalDateTime.now());
+        knowledgeDocument.setUpdatedAt(LocalDateTime.now());
 
         //更新数据库
-        boolean isUpdated = this.updateById(tKnowledgeDocument);
+        boolean isUpdated = this.updateById(knowledgeDocument);
         
         if (isUpdated) {
             // 若有内容则生成/覆盖临时文件
@@ -446,17 +440,17 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
                     }
 
                     // 使用title作为文件名（保持与上传时一致）
-                    String filename = tKnowledgeDocument.getTitle();
+                    String filename = knowledgeDocument.getTitle();
                     if (filename == null || filename.trim().isEmpty()) {
                         // 如果title为空，使用ID作为文件名
-                        String suffix = tKnowledgeDocument.getDocSuffix() != null ?
-                                tKnowledgeDocument.getDocSuffix() : "txt";
-                        filename = tKnowledgeDocument.getId() + "." + suffix;
+                        String suffix = knowledgeDocument.getDocSuffix() != null ?
+                                knowledgeDocument.getDocSuffix() : "txt";
+                        filename = knowledgeDocument.getId() + "." + suffix;
                     } else {
                         // 确保文件名有正确的扩展名
                         if (!filename.contains(".")) {
-                            String suffix = tKnowledgeDocument.getDocSuffix() != null ?
-                                    tKnowledgeDocument.getDocSuffix() : "txt";
+                            String suffix = knowledgeDocument.getDocSuffix() != null ?
+                                    knowledgeDocument.getDocSuffix() : "txt";
                             filename = filename + "." + suffix;
                         }
                     }
@@ -472,12 +466,12 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
                     }
 
                     // 创建新文件
-                    if (tKnowledgeDocument.getContent() != null) {
-                        Files.write(filePath, tKnowledgeDocument.getContent().getBytes("UTF-8"));
+                    if (knowledgeDocument.getContent() != null) {
+                        Files.write(filePath, knowledgeDocument.getContent().getBytes("UTF-8"));
                         logger.info("创建新文件: {}", filePath);
 
                         //dify知识库id可能会有变化，从新传回的实体类中获取
-                        String kbDifyId = knowledgeBaseService.getKnowledgeDetail(tKnowledgeDocument.getKbId()).getBaseId();
+                        String kbDifyId = knowledgeBaseService.getKnowledgeDetail(knowledgeDocument.getKbId()).getBaseId();
                         // 现在调用Dify更新API，传入File对象
                         try {
                             boolean difySyncResult = difySyncService.updateDocumentByFile(
@@ -488,17 +482,17 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
                             if (difySyncResult) {
                                 logger.info("Dify 同步更新成功, 本地ID: {}, Dify文档ID: {}, 文件: {}",
-                                        tKnowledgeDocument.getId(), existingDoc.getDifyDocumentId(), filename);
+                                        knowledgeDocument.getId(), existingDoc.getDifyDocumentId(), filename);
                             } else {
                                 logger.warn("Dify 同步更新失败, 本地ID: {}, Dify文档ID: {}",
-                                        tKnowledgeDocument.getId(), existingDoc.getDifyDocumentId());
+                                        knowledgeDocument.getId(), existingDoc.getDifyDocumentId());
                             }
                         } catch (Exception e) {
-                            logger.error("Dify 同步更新异常, 本地ID: {}", tKnowledgeDocument.getId(), e);
+                            logger.error("Dify 同步更新异常, 本地ID: {}", knowledgeDocument.getId(), e);
                         }
                     }
                 } catch (IOException e) {
-                    logger.error("Dify 同步更新异常, 本地ID: {}", tKnowledgeDocument.getId(), e);
+                    logger.error("Dify 同步更新异常, 本地ID: {}", knowledgeDocument.getId(), e);
                 }
             }
 
@@ -506,20 +500,20 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
 
             //ES同步
             try{
-                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(tKnowledgeDocument.getId()+"",tKnowledgeDocument.getTitle(),tKnowledgeDocument.getContent());
+                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(knowledgeDocument.getId()+"", knowledgeDocument.getTitle(), knowledgeDocument.getContent());
                 elasticsearchSyncService.syncDocumentToEs(esDocument);
             }catch (Exception e){
                 throw new RuntimeException("文档更新到ES失败:"+e.getMessage(),e);
             }
 
 
-            return tKnowledgeDocument;
+            return knowledgeDocument;
         }
         return null;
     }
 
     @Override
-    public PageResult<TKnowledgeDocument> pageByKbId(Long kbId, long current, long size) {
+    public PageResult<KnowledgeDocument> pageByKbId(Long kbId, long current, long size) {
         if (kbId == null) {
             throw new BusinessException(400, "知识库ID不能为空");
         }
@@ -530,12 +524,12 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
             size = 10;
         }
 
-        Page<TKnowledgeDocument> page = new Page<>(current, size);
-        QueryWrapper<TKnowledgeDocument> wrapper = new QueryWrapper<>();
+        Page<KnowledgeDocument> page = new Page<>(current, size);
+        QueryWrapper<KnowledgeDocument> wrapper = new QueryWrapper<>();
         wrapper.eq("kb_id", kbId)
                .orderByDesc("updated_at");
 
-        Page<TKnowledgeDocument> result = this.page(page, wrapper);
+        Page<KnowledgeDocument> result = this.page(page, wrapper);
         return new PageResult<>(
                 result.getRecords(),
                 result.getTotal(),
@@ -550,7 +544,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     public boolean deleteDocument(Long id) {
         try {
             // 先查询文档是否存在
-            TKnowledgeDocument document = this.getById(id);
+            KnowledgeDocument document = this.getById(id);
             if (document == null) {
                 logger.warn("文档不存在: id={}", id);
                 return false;
@@ -598,7 +592,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
     }
 
     @Override
-    public PageResult<TKnowledgeDocument> search(String keyword, int page, int size) {
+    public PageResult<KnowledgeDocument> search(String keyword, int page, int size) {
         if (keyword == null || keyword.isEmpty()) {
             throw new BusinessException(400, "keyword 不能为空");
         }
@@ -606,7 +600,7 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         List<String> idStrs = es.getIds();
 
         if (idStrs == null || idStrs.isEmpty()) {
-            PageResult<TKnowledgeDocument> pr = new PageResult<>();
+            PageResult<KnowledgeDocument> pr = new PageResult<>();
             pr.setRecords(Collections.emptyList());
             pr.setTotal(0);
             pr.setSize(size);
@@ -616,14 +610,14 @@ public class TKnowledgeDocumentServiceImpl extends ServiceImpl<TKnowledgeDocumen
         }
 
         List<Long> ids = idStrs.stream().map(Long::valueOf).collect(Collectors.toList());
-        List<TKnowledgeDocument> list = this.list(new QueryWrapper<TKnowledgeDocument>().in("id", ids));
-        Map<Long, TKnowledgeDocument> map = list.stream().collect(Collectors.toMap(TKnowledgeDocument::getId, Function.identity()));
-        List<TKnowledgeDocument> ordered = ids.stream().map(map::get).filter(Objects::nonNull).collect(Collectors.toList());
+        List<KnowledgeDocument> list = this.list(new QueryWrapper<KnowledgeDocument>().in("id", ids));
+        Map<Long, KnowledgeDocument> map = list.stream().collect(Collectors.toMap(KnowledgeDocument::getId, Function.identity()));
+        List<KnowledgeDocument> ordered = ids.stream().map(map::get).filter(Objects::nonNull).collect(Collectors.toList());
 
         long total = es.getTotal();
         long pages = size > 0 ? (total + size - 1) / size : 0;
 
-        PageResult<TKnowledgeDocument> pr = new PageResult<>();
+        PageResult<KnowledgeDocument> pr = new PageResult<>();
         pr.setRecords(ordered);
         pr.setTotal(total);
         pr.setSize(size);

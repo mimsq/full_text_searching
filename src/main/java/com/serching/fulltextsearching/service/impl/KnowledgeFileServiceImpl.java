@@ -1,9 +1,9 @@
 package com.serching.fulltextsearching.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.serching.fulltextsearching.entity.TKnowledgeFile;
-import com.serching.fulltextsearching.mapper.TKnowledgeFileMapper;
-import com.serching.fulltextsearching.service.TKnowledgeFileService;
+import com.serching.fulltextsearching.entity.KnowledgeFile;
+import com.serching.fulltextsearching.mapper.KnowledgeFileMapper;
+import com.serching.fulltextsearching.service.KnowledgeFileService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -11,11 +11,11 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 
 @Service
-public class TKnowledgeFileServiceImpl extends ServiceImpl<TKnowledgeFileMapper, TKnowledgeFile> implements TKnowledgeFileService {
+public class KnowledgeFileServiceImpl extends ServiceImpl<KnowledgeFileMapper, KnowledgeFile> implements KnowledgeFileService {
 
     @Override
-    public TKnowledgeFile saveFileInfo(MultipartFile file, String filePath, Long userId) throws IOException {
-        TKnowledgeFile knowledgeFile = new TKnowledgeFile();
+    public KnowledgeFile saveFileInfo(MultipartFile file, String filePath, Long userId) throws IOException {
+        KnowledgeFile knowledgeFile = new KnowledgeFile();
         knowledgeFile.setName(file.getOriginalFilename());
         knowledgeFile.setFilePath(filePath);
         knowledgeFile.setSuffix(getFileSuffix(file.getOriginalFilename()));

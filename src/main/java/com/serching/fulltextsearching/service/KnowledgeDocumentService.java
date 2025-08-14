@@ -2,18 +2,18 @@ package com.serching.fulltextsearching.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.serching.fulltextsearching.common.PageResult;
-import com.serching.fulltextsearching.entity.TKnowledgeBase;
-import com.serching.fulltextsearching.entity.TKnowledgeDocument;
+import com.serching.fulltextsearching.entity.KnowledgeBase;
+import com.serching.fulltextsearching.entity.KnowledgeDocument;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
 
-public interface TKnowledgeDocumentService extends IService<TKnowledgeDocument> {
+public interface KnowledgeDocumentService extends IService<KnowledgeDocument> {
 
-    TKnowledgeDocument uploadDocument (TKnowledgeBase knowledgeBase, Long categoryId, MultipartFile file) throws IOException;
+    KnowledgeDocument uploadDocument (KnowledgeBase knowledgeBase, Long categoryId, MultipartFile file) throws IOException;
 
-    TKnowledgeDocument updateDocument(TKnowledgeDocument tKnowledgeDocument);
+    KnowledgeDocument updateDocument(KnowledgeDocument knowledgeDocument);
 
     /**
      * 删除文档，同时删除MySQL和Elasticsearch中的数据
@@ -29,10 +29,10 @@ public interface TKnowledgeDocumentService extends IService<TKnowledgeDocument> 
      * @param size 每页数量
      * @return 分页结果
      */
-    PageResult<TKnowledgeDocument> pageByKbId(Long kbId, long current, long size);
+    PageResult<KnowledgeDocument> pageByKbId(Long kbId, long current, long size);
 
     /**
      * 从 Elasticsearch 全文检索
      */
-    PageResult<TKnowledgeDocument> search(String keyword, int page, int size);
+    PageResult<KnowledgeDocument> search(String keyword, int page, int size);
 }

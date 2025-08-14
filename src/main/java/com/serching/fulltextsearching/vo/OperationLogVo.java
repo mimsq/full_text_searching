@@ -1,10 +1,10 @@
 package com.serching.fulltextsearching.vo;
 
-import com.serching.fulltextsearching.entity.TOperationLog;
+import com.serching.fulltextsearching.entity.OperationLog;
 import lombok.Data;
 
 @Data
-public class OperationLogVo extends TOperationLog {
+public class OperationLogVo extends OperationLog {
     // 文档标题
     private String documentTitle;
     // 操作用户名

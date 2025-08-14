@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 @TableName("t_knowledge_base_category")
-public class TKnowledgeBaseCategory {
+public class KnowledgeBaseCategory {
     @TableId(type = IdType.AUTO)
     //知识库分组id（前端传值可选）
     private Long id;

@@ -3,14 +3,11 @@ package com.serching.fulltextsearching.service.impl;
 import com.serching.fulltextsearching.client.ElasticsearchApiClient;
 import com.serching.fulltextsearching.dto.EsSearchResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
-import com.serching.fulltextsearching.entity.TKnowledgeDocument;
 import com.serching.fulltextsearching.service.ElasticsearchSyncService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
 
 @Slf4j
 @Service

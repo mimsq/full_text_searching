@@ -1,23 +1,19 @@
 package com.serching.fulltextsearching.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serching.fulltextsearching.client.DifyApiClient;
-import com.serching.fulltextsearching.entity.TKnowledgeBase;
-import com.serching.fulltextsearching.entity.TKnowledgeDocument;
+import com.serching.fulltextsearching.entity.KnowledgeBase;
+import com.serching.fulltextsearching.entity.KnowledgeDocument;
 import com.serching.fulltextsearching.service.DifySyncService;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Dify 同步服务实现类
@@ -36,7 +32,7 @@ public class DifySyncServiceImpl implements DifySyncService {
     private boolean syncEnabled;
     
     @Override
-    public boolean updateDocumentInDify(TKnowledgeDocument document) {
+    public boolean updateDocumentInDify(KnowledgeDocument document) {
         if (!syncEnabled) {
             log.info("Dify 同步已禁用，跳过更新操作，documentId: {}", document.getId());
             return true;
@@ -79,7 +75,7 @@ public class DifySyncServiceImpl implements DifySyncService {
     }
     
     @Override
-    public boolean removeDocumentFromDify(TKnowledgeDocument document) {
+    public boolean removeDocumentFromDify(KnowledgeDocument document) {
         if (!syncEnabled) {
             log.info("Dify 同步已禁用，跳过删除操作，documentId: {}", document.getId());
             return true;
@@ -96,7 +92,7 @@ public class DifySyncServiceImpl implements DifySyncService {
         }
         
         try {
-            TKnowledgeBase kb = knowledgeBaseService.getKnowledgeDetail(document.getKbId());
+            KnowledgeBase kb = knowledgeBaseService.getKnowledgeDetail(document.getKbId());
             log.info("开始同步删除文档从 Dify，documentId: {}, difyDocumentId: {}, kbId: {}", 
                     document.getId(), document.getDifyDocumentId(), document.getKbId());
 

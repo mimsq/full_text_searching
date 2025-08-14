@@ -1,7 +1,7 @@
 package com.serching.fulltextsearching.service;
 
 import com.serching.fulltextsearching.dto.MemberKbPermissionDto;
-import com.serching.fulltextsearching.entity.TKnowledgeBaseMember;
+import com.serching.fulltextsearching.entity.KnowledgeBaseMember;
 
 import java.util.List;
 
@@ -12,5 +12,5 @@ public interface MemberService {
 
     void update(MemberKbPermissionDto dto);
 
-    List<TKnowledgeBaseMember> getMemberList(Long kbId, Integer pageNum, Integer pageSize);
+    List<KnowledgeBaseMember> getMemberList(Long kbId, Integer pageNum, Integer pageSize);
 }
