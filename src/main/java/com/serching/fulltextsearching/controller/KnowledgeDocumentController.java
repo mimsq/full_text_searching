@@ -23,7 +23,7 @@ import java.io.IOException;
 
 @Slf4j
 @RestController
-@RequestMapping("/document")
+@RequestMapping("/api/document")
 @Validated
 @Api(tags = "知识文档管理", description = "知识文档的增删改查和文件上传接口")
 public class KnowledgeDocumentController {

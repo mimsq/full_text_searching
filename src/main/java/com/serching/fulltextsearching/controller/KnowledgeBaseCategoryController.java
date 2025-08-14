@@ -15,7 +15,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @RestController
-@RequestMapping("/category")
+@RequestMapping("/api/category")
 @Validated
 @Api(tags = "知识库分类管理接口") // Swagger文档标签
 public class KnowledgeBaseCategoryController {

@@ -17,7 +17,7 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @RestController
-@RequestMapping("/member")
+@RequestMapping("/api/member")
 @Validated
 @Api(tags = "知识库成员管理接口")
 public class MemberController {

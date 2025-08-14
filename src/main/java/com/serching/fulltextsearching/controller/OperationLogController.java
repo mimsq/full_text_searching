@@ -15,7 +15,7 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @RestController
-@RequestMapping("/operationLogs")
+@RequestMapping("/api/operationLogs")
 @Validated
 @Api(tags = "操作日志管理接口")
 public class OperationLogController {

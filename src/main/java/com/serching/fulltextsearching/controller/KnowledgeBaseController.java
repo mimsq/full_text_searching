@@ -17,7 +17,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @RestController
-@RequestMapping("/knowledge")
+@RequestMapping("/api/knowledge")
 @Validated
 @Api(tags = "知识库管理接口")
 public class KnowledgeBaseController {
