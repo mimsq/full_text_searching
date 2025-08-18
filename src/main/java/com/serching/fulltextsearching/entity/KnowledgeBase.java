@@ -1,11 +1,13 @@
 package com.serching.fulltextsearching.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
-@TableName("t_knowledge_base")
+@TableName(value = "t_knowledge_base", autoResultMap = true)
 public class KnowledgeBase {
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -23,4 +25,6 @@ public class KnowledgeBase {
     private String owner; // 归属，组织、小组、外部关联id比如IM某个群
     private Integer permission; // 成员内容权限:0:可查看1：可编辑
     private Long tenantId; // 租户id
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, Object> dict; // 数据字典，JSON字段
 }

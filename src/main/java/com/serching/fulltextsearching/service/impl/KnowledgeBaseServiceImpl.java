@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Service
 public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
@@ -143,5 +144,26 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
             throw new RuntimeException("知识库不存在");
         }
         return knowledgeBase.getScopeType();
+    }
+
+    @Override
+    public void updateDict(Long id, Map<String, Object> dict) {
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
+        if (knowledgeBase == null) {
+            throw new RuntimeException("知识库不存在");
+        }
+        knowledgeBase.setDict(dict);
+        knowledgeBase.setUpdatedAt(LocalDateTime.now());
+        knowledgeBase.setUpdatedBy(1L);
+        knowledgeBaseMapper.updateById(knowledgeBase);
+    }
+
+    @Override
+    public Map<String, Object> getDict(Long id) {
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(id);
+        if (knowledgeBase == null) {
+            throw new RuntimeException("知识库不存在");
+        }
+        return knowledgeBase.getDict();
     }
 }

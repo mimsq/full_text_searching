@@ -11,7 +11,7 @@ spring:
       max-request-size: 10MB
       enabled: true
       file-size-threshold: 2KB
-      location: ${file.upload.temp-dir}
+      location: ${file.upload.permanent-dir}
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -50,3 +50,8 @@ dify:
 file:
   upload:
     permanent-dir: ./file/upload  # 永久存储路径
+
+file-service:    #file服务地址，相关信息根据实际情况来改
+  service:
+    url: http://your-file-service-domain:port  # 文件服务地址
+    uid: 1  # 默认租户人员ID

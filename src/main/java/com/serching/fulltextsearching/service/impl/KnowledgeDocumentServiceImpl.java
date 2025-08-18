@@ -3,8 +3,10 @@ package com.serching.fulltextsearching.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.serching.fulltextsearching.client.FileServiceClient;
 import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.dto.EsSearchResult;
+import com.serching.fulltextsearching.dto.FileCallResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
 import com.serching.fulltextsearching.entity.KnowledgeBase;
 import com.serching.fulltextsearching.entity.KnowledgeDocument;
@@ -61,6 +63,12 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
     @Autowired
     private KnowledgeFileService knowledgeFileService;
 
+    /**
+     * TODO，后续单独添加一个service层
+     */
+    @Autowired
+    private FileServiceClient fileServiceClient;//
+
     private static final Logger logger = LoggerFactory.getLogger(KnowledgeDocumentServiceImpl.class);
 
 
@@ -82,18 +90,21 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
             // 4) 提取文本内容
             String content = extractFileContent(sourceFile);
 
-            // 5) 上传到 Dify 知识库
+            // 5) 上传到文件服务（失败会自动抛出异常）
+            FileCallResult fileServiceResult = uploadToFileService(sourceFile.toFile());
+
+            // 6) 上传到 Dify 知识库（失败会自动抛出异常）
             String difyDocumentId = uploadToDify(kb, sourceFile);
 
-            // 6) 保存文件信息到数据库
+            // 7) 保存文件信息到数据库（失败会自动抛出异常）
             KnowledgeFile knowledgeFile = saveFileInfo(file, sourceFile);
 
-            // 7) 保存文档信息到数据库
+            // 8) 保存文档信息到数据库（失败会自动抛出异常）
             KnowledgeDocument doc = saveDocumentInfo(kb, categoryId, content,
                     file.getOriginalFilename(), suffix,
                     knowledgeFile, difyDocumentId);
 
-            // 8) 异步同步到 Elasticsearch（不影响事务）
+            // 9) 同步到 Elasticsearch（失败会自动抛出异常）
             syncToElasticsearch(doc, content);
 
             logger.info("文档上传成功: {}, 文档ID: {}", file.getOriginalFilename(), doc.getId());
@@ -273,6 +284,13 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         try {
             logger.info("开始上传到 Dify，知识库ID: {}", kbId);
             String difyDocumentId = difySyncService.createDocumentByFile(kbId, sourceFile.toFile());
+            
+            // 需要添加返回值检查
+            if (difyDocumentId == null || difyDocumentId.isEmpty()) {
+                logger.error("Dify 上传失败: 返回的文档ID为空");
+                throw new BusinessException(500, "Dify创建文档失败：返回的文档ID为空");
+            }
+            
             logger.info("Dify 上传成功，文档ID: {}", difyDocumentId);
             return difyDocumentId;
         } catch (Exception e) {
@@ -336,11 +354,11 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
 
     /**
      * 同步到 Elasticsearch
-     * 使用 @Async 注解，不影响主事务
+     * 
      */
-    public void syncToElasticsearch(KnowledgeDocument doc, String content) {
+    private void syncToElasticsearch(KnowledgeDocument doc, String content) {
         try {
-            logger.info("开始异步同步到 Elasticsearch，文档ID: {}", doc.getId());
+            logger.info("开始同步到 Elasticsearch，文档ID: {}", doc.getId());
 
             ESKnowledgeDocument esDocument = new ESKnowledgeDocument(
                     doc.getId().toString(),
@@ -351,6 +369,7 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
             boolean syncResult = elasticsearchSyncService.syncDocumentToEs(esDocument);
 
             if (!syncResult) {
+                logger.error("Elasticsearch 同步失败，文档ID: {}", doc.getId());
                 throw new BusinessException(500, "Elasticsearch 同步失败");
             }
 
@@ -362,6 +381,29 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
     }
 
 
+    /**
+     * 上传到文件服务
+     */
+    private FileCallResult uploadToFileService(File file) {
+        try {
+            logger.info("开始上传到文件服务: {}", file.getName());
+            FileCallResult result = fileServiceClient.uploadFile(file, "1", "1L");
+
+            if (result.isSuccess()) {
+                logger.info("文件服务上传成功，文件ID: {}, storeId: {}", result.getId(), result.getStoreId());
+            } else {
+                logger.error("文件服务上传失败: {}", result.getMsg());
+                // 需要抛出异常来触发事务回滚
+                throw new BusinessException(500, "文件服务上传失败: " + result.getMsg());
+            }
+
+            return result;
+        } catch (Exception e) {
+            logger.error("文件服务上传异常: {}", e.getMessage(), e);
+            // 需要重新抛出异常来触发事务回滚
+            throw new BusinessException(500, "文件服务上传异常: " + e.getMessage(), e);
+        }
+    }
 
 
 

@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @MapperScan("com.serching.fulltextsearching.mapper")
-@EnableElasticsearchRepositories(basePackages = "com.serching.fulltextsearching.repository")
 public class FullTextSearchingApplication {
 
     public static void main(String[] args) {

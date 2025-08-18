@@ -15,6 +15,7 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/knowledge")
@@ -133,6 +134,34 @@ public class KnowledgeBaseController {
         try {
             Integer permission = knowledgeService.getPermission(knowledgeBaseId);
             return Result.success(permission);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/dict")
+    @ApiOperation("获取知识库数据字典")
+    public Result<Map<String, Object>> getDict(
+            @ApiParam(value = "知识库ID", required = true)
+            @PathVariable Long id) {
+        try {
+            Map<String, Object> dict = knowledgeService.getDict(id);
+            return Result.success(dict);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/dict")
+    @ApiOperation("更新知识库数据字典")
+    public Result<Void> updateDict(
+            @ApiParam(value = "知识库ID", required = true)
+            @PathVariable Long id,
+            @ApiParam(value = "数据字典(JSON)", required = true)
+            @RequestBody Map<String, Object> dict) {
+        try {
+            knowledgeService.updateDict(id, dict);
+            return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
