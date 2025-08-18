@@ -107,6 +107,12 @@ public class KnowledgeDocumentController {
         if (document == null) {
             throw new BusinessException(404, "文档不存在");
         }
+        // 记录预览操作日志（operationType=4）
+        try {
+            operationLogService.addOperationLog(4, id, document.getKbId(), 1L);
+        } catch (Exception e) {
+            log.warn("记录预览日志失败, docId={}", id, e);
+        }
         return Result.success(document);
     }
 
@@ -169,6 +175,36 @@ public class KnowledgeDocumentController {
             @NotNull(message = "每页大小不能为空") int size
     ) {
         return Result.success(knowledgeDocumentService.search(keyword, page, size));
+    }
+
+    @GetMapping("/recent-edited")
+    @Operation(summary = "最近编辑文档", description = "基于操作日志聚合，按最近编辑时间倒序返回文档列表")
+    public Result<PageResult<KnowledgeDocument>> recentEdited(
+            @Parameter(description = "知识库ID(可选)")
+            @RequestParam(value = "knowledgeId", required = false) Long knowledgeId,
+            @Parameter(description = "用户ID(可选，未接入鉴权前从请求传入)")
+            @RequestParam(value = "userId", required = false) Long userId,
+            @RequestParam(defaultValue = "1")
+            @NotNull(message = "当前页不能为空") int page,
+            @RequestParam(defaultValue = "10")
+            @NotNull(message = "每页大小不能为空") int size
+    ) {
+        return Result.success(knowledgeDocumentService.pageRecentEdited(knowledgeId, userId, page, size));
+    }
+
+    @GetMapping("/recent-viewed")
+    @Operation(summary = "最近预览文档", description = "基于操作日志聚合，按最近预览时间倒序返回文档列表")
+    public Result<PageResult<KnowledgeDocument>> recentViewed(
+            @Parameter(description = "知识库ID(可选)")
+            @RequestParam(value = "knowledgeId", required = false) Long knowledgeId,
+            @Parameter(description = "用户ID(可选，未接入鉴权前从请求传入)")
+            @RequestParam(value = "userId", required = false) Long userId,
+            @RequestParam(defaultValue = "1")
+            @NotNull(message = "当前页不能为空") int page,
+            @RequestParam(defaultValue = "10")
+            @NotNull(message = "每页大小不能为空") int size
+    ) {
+        return Result.success(knowledgeDocumentService.pageRecentViewed(knowledgeId, userId, page, size));
     }
 
 }

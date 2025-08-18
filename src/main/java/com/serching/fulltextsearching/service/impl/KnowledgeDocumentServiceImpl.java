@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -668,4 +669,72 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         return pr;
     }
     
+    @Override
+    public PageResult<KnowledgeDocument> pageRecentEdited(Long kbId, Long userId, int page, int size) {
+        if (page <= 0) {
+            page = 1;
+        }
+        if (size <= 0) {
+            size = 10;
+        }
+
+        int offset = (page - 1) * size;
+
+        Long total = baseMapper.countRecentEdited(kbId, userId);
+        if (total == null || total == 0) {
+            PageResult<KnowledgeDocument> empty = new PageResult<>();
+            empty.setRecords(new ArrayList<>());
+            empty.setTotal(0);
+            empty.setSize(size);
+            empty.setCurrent(page);
+            empty.setPages(0);
+            return empty;
+        }
+
+        List<KnowledgeDocument> records = baseMapper.selectRecentEdited(kbId, userId, offset, size);
+        long pages = size > 0 ? (total + size - 1) / size : 0;
+
+        PageResult<KnowledgeDocument> pr = new PageResult<>();
+        pr.setRecords(records);
+        pr.setTotal(total);
+        pr.setSize(size);
+        pr.setCurrent(page);
+        pr.setPages(pages);
+        return pr;
+    }
+
+    @Override
+    public PageResult<KnowledgeDocument> pageRecentViewed(Long kbId, Long userId, int page, int size) {
+        if (page <= 0) {
+            page = 1;
+        }
+        if (size <= 0) {
+            size = 10;
+        }
+
+        int offset = (page - 1) * size;
+
+        Long total = baseMapper.countRecentViewed(kbId, userId);
+        if (total == null || total == 0) {
+            PageResult<KnowledgeDocument> empty = new PageResult<>();
+            empty.setRecords(new ArrayList<>());
+            empty.setTotal(0);
+            empty.setSize(size);
+            empty.setCurrent(page);
+            empty.setPages(0);
+            return empty;
+        }
+
+        List<KnowledgeDocument> records = baseMapper.selectRecentViewed(kbId, userId, offset, size);
+        long pages = size > 0 ? (total + size - 1) / size : 0;
+
+        PageResult<KnowledgeDocument> pr = new PageResult<>();
+        pr.setRecords(records);
+        pr.setTotal(total);
+        pr.setSize(size);
+        pr.setCurrent(page);
+        pr.setPages(pages);
+        return pr;
+    }
+
 }

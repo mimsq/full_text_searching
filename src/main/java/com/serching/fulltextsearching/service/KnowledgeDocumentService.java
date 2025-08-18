@@ -35,4 +35,14 @@ public interface KnowledgeDocumentService extends IService<KnowledgeDocument> {
      * 从 Elasticsearch 全文检索
      */
     PageResult<KnowledgeDocument> search(String keyword, int page, int size);
+
+	/**
+	 * 最近编辑分页
+	 */
+	PageResult<KnowledgeDocument> pageRecentEdited(Long kbId, Long userId, int page, int size);
+
+	/**
+	 * 最近预览分页
+	 */
+	PageResult<KnowledgeDocument> pageRecentViewed(Long kbId, Long userId, int page, int size);
 }
