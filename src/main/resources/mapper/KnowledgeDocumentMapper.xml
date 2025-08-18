@@ -10,41 +10,55 @@
         LIMIT #{pageNum}, #{pageSize}
     </select>
 
-    <!-- 最近编辑文档列表（按最后一次编辑时间倒序，去重文档） -->
+    <!-- 最近编辑文档列表（按最后一次编辑时间倒序，去重文档；隐藏仅对隐藏时点之前的编辑有效） -->
     <select id="selectRecentEdited" resultType="com.serching.fulltextsearching.entity.KnowledgeDocument">
         SELECT d.*
-        FROM t_operation_log ol
-        JOIN t_knowledge_document d ON d.id = ol.object_id
-        WHERE ol.operation_type = 2
-          AND (ol.object_type IS NULL OR ol.object_type = 'document')
+        FROM (
+            SELECT ol.object_id AS doc_id, MAX(ol.created_at) AS last_edit_at
+            FROM t_operation_log ol
+            WHERE ol.operation_type = 2
+              AND ol.kb_id = #{kbId}
+            GROUP BY ol.object_id
+        ) le
+        JOIN t_knowledge_document d ON d.id = le.doc_id
+        WHERE d.kb_id = #{kbId}
           AND d.del_status = 0
           AND d.doc_status = 1
-          <if test="kbId != null">
-            AND ol.kb_id = #{kbId}
-          </if>
-          <if test="userId != null">
-            AND ol.created_by = #{userId}
-          </if>
-        GROUP BY d.id
-        ORDER BY MAX(ol.created_at) DESC
+          AND NOT EXISTS (
+              SELECT 1 FROM t_operation_log ol2
+              WHERE ol2.object_id = d.id
+                AND ol2.kb_id = #{kbId}
+                AND ol2.operation_type = 5
+                AND ol2.created_at >= le.last_edit_at
+          )
+        ORDER BY le.last_edit_at DESC
         LIMIT #{pageNum}, #{pageSize}
     </select>
 
-    <!-- 最近编辑文档总数（去重） -->
+    <!-- 最近编辑文档总数（去重；隐藏仅对隐藏时点之前的编辑有效） -->
     <select id="countRecentEdited" resultType="long">
-        SELECT COUNT(DISTINCT ol.object_id)
-        FROM t_operation_log ol
-        JOIN t_knowledge_document d ON d.id = ol.object_id
-        WHERE ol.operation_type = 2
-          AND (ol.object_type IS NULL OR ol.object_type = 'document')
-          AND d.del_status = 0
-          AND d.doc_status = 1
-          <if test="kbId != null">
-            AND ol.kb_id = #{kbId}
-          </if>
-          <if test="userId != null">
-            AND ol.created_by = #{userId}
-          </if>
+        SELECT COUNT(1)
+        FROM (
+            SELECT le.doc_id
+            FROM (
+                SELECT ol.object_id AS doc_id, MAX(ol.created_at) AS last_edit_at
+                FROM t_operation_log ol
+                WHERE ol.operation_type = 2
+                  AND ol.kb_id = #{kbId}
+                GROUP BY ol.object_id
+            ) le
+            JOIN t_knowledge_document d ON d.id = le.doc_id
+            WHERE d.kb_id = #{kbId}
+              AND d.del_status = 0
+              AND d.doc_status = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM t_operation_log ol2
+                  WHERE ol2.object_id = d.id
+                    AND ol2.kb_id = #{kbId}
+                    AND ol2.operation_type = 5
+                    AND ol2.created_at >= le.last_edit_at
+              )
+        ) t
     </select>
 
     <!-- 最近预览文档列表（按最后一次预览时间倒序，去重文档） -->

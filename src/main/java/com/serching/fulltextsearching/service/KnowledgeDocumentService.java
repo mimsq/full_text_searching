@@ -39,7 +39,7 @@ public interface KnowledgeDocumentService extends IService<KnowledgeDocument> {
 	/**
 	 * 最近编辑分页
 	 */
-	PageResult<KnowledgeDocument> pageRecentEdited(Long kbId, Long userId, int page, int size);
+	PageResult<KnowledgeDocument> pageRecentEdited(Long kbId, int page, int size);
 
 	/**
 	 * 最近预览分页

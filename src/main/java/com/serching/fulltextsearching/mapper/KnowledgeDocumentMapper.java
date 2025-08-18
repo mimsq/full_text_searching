@@ -19,7 +19,6 @@ public interface KnowledgeDocumentMapper extends BaseMapper<KnowledgeDocument> {
 	 */
 	List<KnowledgeDocument> selectRecentEdited(
 		@Param("kbId") Long kbId,
-		@Param("userId") Long userId,
 		@Param("pageNum") Integer pageNum,
 		@Param("pageSize") Integer pageSize
 	);
@@ -28,8 +27,7 @@ public interface KnowledgeDocumentMapper extends BaseMapper<KnowledgeDocument> {
 	 * 最近编辑文档总数（去重计数）
 	 */
 	Long countRecentEdited(
-		@Param("kbId") Long kbId,
-		@Param("userId") Long userId
+		@Param("kbId") Long kbId
 	);
 
 	/** 最近预览的文档（按操作日志中预览时间倒序，去重文档） */

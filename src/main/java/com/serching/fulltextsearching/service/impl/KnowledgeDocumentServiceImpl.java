@@ -670,7 +670,7 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
     }
     
     @Override
-    public PageResult<KnowledgeDocument> pageRecentEdited(Long kbId, Long userId, int page, int size) {
+    public PageResult<KnowledgeDocument> pageRecentEdited(Long kbId, int page, int size) {
         if (page <= 0) {
             page = 1;
         }
@@ -680,7 +680,11 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
 
         int offset = (page - 1) * size;
 
-        Long total = baseMapper.countRecentEdited(kbId, userId);
+        if (kbId == null) {
+            throw new BusinessException(400, "knowledgeId 不能为空");
+        }
+
+        Long total = baseMapper.countRecentEdited(kbId);
         if (total == null || total == 0) {
             PageResult<KnowledgeDocument> empty = new PageResult<>();
             empty.setRecords(new ArrayList<>());
@@ -691,7 +695,7 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
             return empty;
         }
 
-        List<KnowledgeDocument> records = baseMapper.selectRecentEdited(kbId, userId, offset, size);
+        List<KnowledgeDocument> records = baseMapper.selectRecentEdited(kbId, offset, size);
         long pages = size > 0 ? (total + size - 1) / size : 0;
 
         PageResult<KnowledgeDocument> pr = new PageResult<>();

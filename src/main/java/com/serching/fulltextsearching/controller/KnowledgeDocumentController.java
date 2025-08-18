@@ -178,18 +178,34 @@ public class KnowledgeDocumentController {
     }
 
     @GetMapping("/recent-edited")
-    @Operation(summary = "最近编辑文档", description = "基于操作日志聚合，按最近编辑时间倒序返回文档列表")
+    @Operation(summary = "最近编辑文档", description = "基于操作日志聚合，按最近编辑时间倒序返回文档列表；必须传 knowledgeId")
     public Result<PageResult<KnowledgeDocument>> recentEdited(
-            @Parameter(description = "知识库ID(可选)")
-            @RequestParam(value = "knowledgeId", required = false) Long knowledgeId,
-            @Parameter(description = "用户ID(可选，未接入鉴权前从请求传入)")
-            @RequestParam(value = "userId", required = false) Long userId,
+            @Parameter(description = "知识库ID(必填)")
+            @RequestParam(value = "knowledgeId") Long knowledgeId,
             @RequestParam(defaultValue = "1")
             @NotNull(message = "当前页不能为空") int page,
             @RequestParam(defaultValue = "10")
             @NotNull(message = "每页大小不能为空") int size
     ) {
-        return Result.success(knowledgeDocumentService.pageRecentEdited(knowledgeId, userId, page, size));
+        if (knowledgeId == null) {
+            throw new BusinessException(400, "knowledgeId 不能为空");
+        }
+        return Result.success(knowledgeDocumentService.pageRecentEdited(knowledgeId, page, size));
+    }
+
+    @DeleteMapping("/recent-edited/{id}")
+    @Operation(summary = "从最近编辑中移除", description = "全局从最近编辑中移除，不影响其他数据，不删除文档")
+    public Result<Void> removeFromRecentEdited(
+            @Parameter(description = "文档ID", required = true)
+            @PathVariable("id") Long documentId,
+            @Parameter(description = "知识库ID(必填)")
+            @RequestParam(value = "knowledgeId") Long knowledgeId
+    ) {
+        if (documentId == null || knowledgeId == null) {
+            throw new BusinessException(400, "id 与 knowledgeId 均不能为空");
+        }
+        operationLogService.hideFromRecentEdited(documentId, knowledgeId);
+        return Result.success();
     }
 
     @GetMapping("/recent-viewed")

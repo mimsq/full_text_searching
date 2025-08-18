@@ -32,4 +32,14 @@ public class OperationLogServiceImpl implements OperationLogService {
         List<OperationLogVo> operationLogList = operationLogMapper.selectOperationLogWithDetails(kbId, (pageNum-1)*pageSize, pageSize);
         return operationLogList;
     }
+
+    @Override
+    public void hideFromRecentEdited(Long documentId, Long kbId) {
+        OperationLog hideLog = new OperationLog();
+        hideLog.setOperationType(5); // 5=最近编辑隐藏（全局）
+        hideLog.setObjectId(documentId);
+        hideLog.setKbId(kbId);
+        hideLog.setCreatedAt(LocalDateTime.now());
+        operationLogMapper.insert(hideLog);
+    }
 }
