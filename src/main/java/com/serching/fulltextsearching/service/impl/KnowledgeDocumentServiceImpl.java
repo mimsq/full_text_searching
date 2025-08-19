@@ -573,6 +573,7 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         Page<KnowledgeDocument> page = new Page<>(current, size);
         QueryWrapper<KnowledgeDocument> wrapper = new QueryWrapper<>();
         wrapper.eq("kb_id", kbId)
+               .eq("del_status", 0)  // 只查询未删除的文档
                .orderByDesc("updated_at");
 
         Page<KnowledgeDocument> result = this.page(page, wrapper);
@@ -585,7 +586,8 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         );
     }
 
-    
+
+    //真实物理删除文档，而不移入回收站中
     @Override
     public boolean deleteDocument(Long id) {
         try {
@@ -744,4 +746,184 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         return pr;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean moveToRecycleBin(Long documentId, Long userId) {
+        logger.info("开始将文档移动到回收站，文档ID: {}, 用户ID: {}", documentId, userId);
+        
+        try {
+            // 1. 查询文档是否存在
+            KnowledgeDocument document = this.getById(documentId);
+            if (document == null) {
+                logger.warn("文档不存在: id={}", documentId);
+                throw new BusinessException(404, "文档不存在");
+            }
+
+            // 2. 检查文档是否已经在回收站
+            if (document.getDelStatus() != null && document.getDelStatus() == 1) {
+                logger.warn("文档已经在回收站中: id={}", documentId);
+                throw new BusinessException(400, "文档已经在回收站中");
+            }
+
+            // 3. 同步删除Dify中的文档
+            try {
+                boolean difySyncResult = difySyncService.removeDocumentFromDify(document);
+                if (difySyncResult) {
+                    logger.info("Dify 同步删除成功, 本地ID: {}, Dify文档ID: {}", 
+                        document.getId(), document.getDifyDocumentId());
+                } else {
+                    logger.warn("Dify 同步删除失败, 本地ID: {}, Dify文档ID: {}", 
+                        document.getId(), document.getDifyDocumentId());
+                }
+            } catch (Exception e) {
+                logger.error("Dify 同步删除异常, 本地ID: {}", document.getId(), e);
+                // 不抛出异常，继续执行
+            }
+
+            // 4. 删除Elasticsearch中的数据
+            try {
+                elasticsearchSyncService.deleteDocumentFromEs(documentId.toString());
+                logger.info("Elasticsearch 文档删除成功, 文档ID: {}", documentId);
+            } catch (Exception e) {
+                logger.error("Elasticsearch 文档删除失败, 文档ID: {}", documentId, e);
+                // 不抛出异常，继续执行
+            }
+
+            // 5. 更新数据库状态为已删除
+            document.setDelStatus(1);
+            document.setUpdatedAt(LocalDateTime.now());
+            document.setUpdatedBy(userId);
+            
+            boolean updated = this.updateById(document);
+            if (updated) {
+                logger.info("文档成功移动到回收站, 文档ID: {}", documentId);
+                return true;
+            } else {
+                logger.error("更新文档状态失败, 文档ID: {}", documentId);
+                throw new BusinessException(500, "更新文档状态失败");
+            }
+            
+        } catch (Exception e) {
+            logger.error("移动文档到回收站失败, 文档ID: {}", documentId, e);
+            throw new BusinessException(500, "移动文档到回收站失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean restoreFromRecycleBin(Long documentId, Long userId) {
+        logger.info("开始从回收站恢复文档，文档ID: {}, 用户ID: {}", documentId, userId);
+        
+        try {
+            // 1. 查询文档是否存在
+            KnowledgeDocument document = this.getById(documentId);
+            if (document == null) {
+                logger.warn("文档不存在: id={}", documentId);
+                throw new BusinessException(404, "文档不存在");
+            }
+
+            // 2. 检查文档是否在回收站中
+            if (document.getDelStatus() == null || document.getDelStatus() != 1) {
+                logger.warn("文档不在回收站中: id={}", documentId);
+                throw new BusinessException(400, "文档不在回收站中");
+            }
+
+            // 3. 重新同步到Dify
+            try {
+                // 获取知识库信息
+                KnowledgeBase kb = knowledgeBaseService.getKnowledgeDetail(document.getKbId());
+                if (kb != null && kb.getBaseId() != null) {
+                    // 重新上传到Dify
+                    String newDifyDocumentId = difySyncService.createDocumentByFile(kb.getBaseId(), 
+                        new File(fileUploadConfig.getPermanentDir(), document.getTitle()));
+                    
+                    if (newDifyDocumentId != null && !newDifyDocumentId.isEmpty()) {
+                        document.setDifyDocumentId(newDifyDocumentId);
+                        logger.info("Dify 重新同步成功, 本地ID: {}, 新Dify文档ID: {}", 
+                            document.getId(), newDifyDocumentId);
+                    } else {
+                        logger.warn("Dify 重新同步失败, 本地ID: {}", document.getId());
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Dify 重新同步异常, 本地ID: {}", document.getId(), e);
+                // 不抛出异常，继续执行
+            }
+
+            // 4. 重新同步到Elasticsearch
+            try {
+                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(
+                    document.getId().toString(),
+                    document.getTitle(),
+                    document.getContent()
+                );
+                boolean esSyncResult = elasticsearchSyncService.syncDocumentToEs(esDocument);
+                if (esSyncResult) {
+                    logger.info("Elasticsearch 重新同步成功, 文档ID: {}", documentId);
+                } else {
+                    logger.warn("Elasticsearch 重新同步失败, 文档ID: {}", documentId);
+                }
+            } catch (Exception e) {
+                logger.error("Elasticsearch 重新同步异常, 文档ID: {}", documentId, e);
+                // 不抛出异常，继续执行
+            }
+
+            // 5. 更新数据库状态为正常
+            document.setDelStatus(0);
+            document.setUpdatedAt(LocalDateTime.now());
+            document.setUpdatedBy(userId);
+            
+            boolean updated = this.updateById(document);
+            if (updated) {
+                logger.info("文档成功从回收站恢复, 文档ID: {}", documentId);
+                return true;
+            } else {
+                logger.error("更新文档状态失败, 文档ID: {}", documentId);
+                throw new BusinessException(500, "更新文档状态失败");
+            }
+            
+        } catch (Exception e) {
+            logger.error("从回收站恢复文档失败, 文档ID: {}", documentId, e);
+            throw new BusinessException(500, "从回收站恢复文档失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public PageResult<KnowledgeDocument> getRecycleBinList(Long kbId, int page, int size) {
+        logger.info("获取回收站列表，知识库ID: {}, 页码: {}, 每页大小: {}", kbId, page, size);
+        
+        if (kbId == null) {
+            throw new BusinessException(400, "知识库ID不能为空");
+        }
+        if (page <= 0) {
+            page = 1;
+        }
+        if (size <= 0) {
+            size = 10;
+        }
+
+        try {
+            Page<KnowledgeDocument> pageParam = new Page<>(page, size);
+            QueryWrapper<KnowledgeDocument> wrapper = new QueryWrapper<>();
+            wrapper.eq("kb_id", kbId)
+                   .eq("del_status", 1)  // 只查询已删除的文档
+                   .orderByDesc("updated_at");  // 按更新时间倒序
+
+            Page<KnowledgeDocument> result = this.page(pageParam, wrapper);
+            
+            PageResult<KnowledgeDocument> pageResult = new PageResult<>();
+            pageResult.setRecords(result.getRecords());
+            pageResult.setTotal(result.getTotal());
+            pageResult.setSize(result.getSize());
+            pageResult.setCurrent(result.getCurrent());
+            pageResult.setPages(result.getPages());
+            
+            logger.info("回收站列表查询成功，总数: {}", result.getTotal());
+            return pageResult;
+            
+        } catch (Exception e) {
+            logger.error("获取回收站列表失败，知识库ID: {}", kbId, e);
+            throw new BusinessException(500, "获取回收站列表失败: " + e.getMessage());
+        }
+    }
 }

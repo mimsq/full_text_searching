@@ -5,13 +5,19 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.entity.KnowledgeBase;
+import com.serching.fulltextsearching.exception.BusinessException;
 import com.serching.fulltextsearching.mapper.KnowledgeBaseMapper;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
@@ -21,6 +27,9 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     @Autowired
     private KnowledgeBaseMapper knowledgeBaseMapper;
+
+    @Value("${file.upload.image}")
+    private String imageDir;
 
     @Override
     public void createKnowledge(String name, String coverImagePath, Integer scopeType, String descriptionInfo) {
@@ -166,4 +175,26 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         }
         return knowledgeBase.getDict();
     }
+
+    @Override
+    public String uploadCoverImage(MultipartFile file) throws IOException{
+        //1.确保上传目录存在
+        File dir = new File(imageDir);
+        if (!dir.exists() && !dir.mkdirs()){
+            throw new BusinessException("目录不存在且无法创建");
+        }
+
+        //2.生成唯一文件名
+        String originalFilename = file.getOriginalFilename();
+        String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String fileName = "cover_" + UUID.randomUUID()+suffix;
+
+        //3.保存文件
+        File dest = new File(dir,fileName);
+        file.transferTo(dest);
+
+        //4.构建访问路径
+        return "/api/covers/"+fileName;
+    }
+
 }

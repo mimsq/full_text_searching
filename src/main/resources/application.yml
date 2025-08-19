@@ -50,6 +50,9 @@ dify:
 file:
   upload:
     permanent-dir: ./file/upload  # 永久存储路径
+    image: ${file.upload.permanent-dir}/image
+
+
 
 file-service:    #file服务地址，相关信息根据实际情况来改
   service:

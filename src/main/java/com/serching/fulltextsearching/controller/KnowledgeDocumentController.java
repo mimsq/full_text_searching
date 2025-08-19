@@ -118,7 +118,7 @@ public class KnowledgeDocumentController {
 
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除文档", description = "根据ID删除知识文档")
+    @Operation(summary = "删除文档", description = "根据ID删除知识文档，不移入回收站，要删除然后移入回收站中，请使用回收站的移入回收站接口")
     public Result<Void> deleteDocument(
             @Parameter(description = "文档ID", required = true, example = "1")
             @PathVariable

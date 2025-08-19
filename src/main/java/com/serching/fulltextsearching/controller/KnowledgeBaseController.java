@@ -3,6 +3,7 @@ package com.serching.fulltextsearching.controller;
 import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.common.Result;
 import com.serching.fulltextsearching.entity.KnowledgeBase;
+import com.serching.fulltextsearching.exception.BusinessException;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -10,11 +11,13 @@ import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -166,4 +169,42 @@ public class KnowledgeBaseController {
             return Result.error(e.getMessage());
         }
     }
+
+
+    //上传封面图片接口
+    @PostMapping(value = "/cover/upload",consumes = "multipart/form-data")
+    @ApiOperation("上传知识库封面图片")
+    public Result<Map<String,String>> uploadCoverImage(
+            @ApiParam(value = "封面图片文件", required = true)
+            @RequestPart("file")MultipartFile file){
+        try{
+            //1.基础验证
+            if (file.isEmpty()){
+                return Result.error("上传文件不能为空");
+            }
+
+            if (!file.getContentType().startsWith("image/")){
+                return Result.error("请上传图片类型文件");
+            }
+            if (file.getSize() > 1024 * 1024){
+                return Result.error("图片不能超过1MB");
+            }
+
+            //2.调用业务层处理业务逻辑
+            String imagePath = knowledgeService.uploadCoverImage(file);
+
+            //3.构建响应
+            Map<String,String> result = new HashMap<>(1);
+            result.put("coverImagePath",imagePath);
+            return Result.success(result);
+
+        }catch (BusinessException e){
+            return Result.error(e.getMessage());
+        }catch (Exception e){
+            return Result.error("系统异常，请稍后重试");
+        }
+    }
+
+
+
 }

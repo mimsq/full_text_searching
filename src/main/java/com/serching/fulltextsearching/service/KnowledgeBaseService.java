@@ -2,6 +2,9 @@ package com.serching.fulltextsearching.service;
 
 import com.serching.fulltextsearching.common.PageResult;
 import com.serching.fulltextsearching.entity.KnowledgeBase;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.Map;
 
 public interface KnowledgeBaseService {
@@ -23,4 +26,6 @@ public interface KnowledgeBaseService {
     void updateDict(Long id, Map<String, Object> dict);
 
     Map<String, Object> getDict(Long id);
+
+    String uploadCoverImage(MultipartFile file) throws IOException;
 }

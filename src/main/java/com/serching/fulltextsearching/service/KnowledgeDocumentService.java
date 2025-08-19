@@ -45,4 +45,29 @@ public interface KnowledgeDocumentService extends IService<KnowledgeDocument> {
 	 * 最近预览分页
 	 */
 	PageResult<KnowledgeDocument> pageRecentViewed(Long kbId, Long userId, int page, int size);
+
+    /**
+     * 删除到回收站
+     * @param documentId 文档ID
+     * @param userId 操作用户ID
+     * @return 是否成功
+     */
+    boolean moveToRecycleBin(Long documentId, Long userId);
+
+    /**
+     * 从回收站恢复文档
+     * @param documentId 文档ID
+     * @param userId 操作用户ID
+     * @return 是否成功
+     */
+    boolean restoreFromRecycleBin(Long documentId, Long userId);
+
+    /**
+     * 获取回收站列表
+     * @param kbId 知识库ID
+     * @param page 页码
+     * @param size 每页大小
+     * @return 分页结果
+     */
+    PageResult<KnowledgeDocument> getRecycleBinList(Long kbId, int page, int size);
 }
