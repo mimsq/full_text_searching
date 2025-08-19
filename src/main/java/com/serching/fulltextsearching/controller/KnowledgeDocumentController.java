@@ -178,18 +178,15 @@ public class KnowledgeDocumentController {
     }
 
     @GetMapping("/recent-edited")
-    @Operation(summary = "最近编辑文档", description = "基于操作日志聚合，按最近编辑时间倒序返回文档列表；必须传 knowledgeId")
+    @Operation(summary = "最近编辑文档", description = "基于操作日志聚合，按最近编辑时间倒序返回文档列表；knowledgeId 可选，不传则查询全部知识库")
     public Result<PageResult<KnowledgeDocument>> recentEdited(
-            @Parameter(description = "知识库ID(必填)")
-            @RequestParam(value = "knowledgeId") Long knowledgeId,
+            @Parameter(description = "知识库ID(可选)")
+            @RequestParam(value = "knowledgeId", required = false) Long knowledgeId,
             @RequestParam(defaultValue = "1")
             @NotNull(message = "当前页不能为空") int page,
             @RequestParam(defaultValue = "10")
             @NotNull(message = "每页大小不能为空") int size
     ) {
-        if (knowledgeId == null) {
-            throw new BusinessException(400, "knowledgeId 不能为空");
-        }
         return Result.success(knowledgeDocumentService.pageRecentEdited(knowledgeId, page, size));
     }
 

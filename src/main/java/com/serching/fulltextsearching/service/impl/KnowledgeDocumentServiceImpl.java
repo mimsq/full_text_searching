@@ -685,22 +685,37 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
 
         int offset = (page - 1) * size;
 
+        Long total;
+        List<KnowledgeDocument> records;
+
         if (kbId == null) {
-            throw new BusinessException(400, "knowledgeId 不能为空");
+            // 全部知识库维度
+            total = baseMapper.countRecentEdited(null);
+            if (total == null || total == 0) {
+                PageResult<KnowledgeDocument> empty = new PageResult<>();
+                empty.setRecords(new ArrayList<>());
+                empty.setTotal(0);
+                empty.setSize(size);
+                empty.setCurrent(page);
+                empty.setPages(0);
+                return empty;
+            }
+            records = baseMapper.selectRecentEdited(null, offset, size);
+        } else {
+            // 指定知识库
+            total = baseMapper.countRecentEdited(kbId);
+            if (total == null || total == 0) {
+                PageResult<KnowledgeDocument> empty = new PageResult<>();
+                empty.setRecords(new ArrayList<>());
+                empty.setTotal(0);
+                empty.setSize(size);
+                empty.setCurrent(page);
+                empty.setPages(0);
+                return empty;
+            }
+            records = baseMapper.selectRecentEdited(kbId, offset, size);
         }
 
-        Long total = baseMapper.countRecentEdited(kbId);
-        if (total == null || total == 0) {
-            PageResult<KnowledgeDocument> empty = new PageResult<>();
-            empty.setRecords(new ArrayList<>());
-            empty.setTotal(0);
-            empty.setSize(size);
-            empty.setCurrent(page);
-            empty.setPages(0);
-            return empty;
-        }
-
-        List<KnowledgeDocument> records = baseMapper.selectRecentEdited(kbId, offset, size);
         long pages = size > 0 ? (total + size - 1) / size : 0;
 
         PageResult<KnowledgeDocument> pr = new PageResult<>();

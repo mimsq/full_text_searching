@@ -10,24 +10,32 @@
         LIMIT #{pageNum}, #{pageSize}
     </select>
 
-    <!-- 最近编辑文档列表（按最后一次编辑时间倒序，去重文档；隐藏仅对隐藏时点之前的编辑有效） -->
+    <!-- 最近编辑文档列表（按最后一次编辑时间倒序，去重文档；隐藏仅对隐藏时点之前的编辑有效）。kbId 可为空表示全局 -->
     <select id="selectRecentEdited" resultType="com.serching.fulltextsearching.entity.KnowledgeDocument">
-        SELECT d.*
+        SELECT d.*,
+               kb.title AS kbTitle
         FROM (
             SELECT ol.object_id AS doc_id, MAX(ol.created_at) AS last_edit_at
             FROM t_operation_log ol
             WHERE ol.operation_type = 2
+            <if test="kbId != null">
               AND ol.kb_id = #{kbId}
+            </if>
             GROUP BY ol.object_id
         ) le
         JOIN t_knowledge_document d ON d.id = le.doc_id
-        WHERE d.kb_id = #{kbId}
-          AND d.del_status = 0
+        JOIN t_knowledge_base kb ON kb.id = d.kb_id
+        WHERE d.del_status = 0
           AND d.doc_status = 1
+          <if test="kbId != null">
+            AND d.kb_id = #{kbId}
+          </if>
           AND NOT EXISTS (
               SELECT 1 FROM t_operation_log ol2
               WHERE ol2.object_id = d.id
-                AND ol2.kb_id = #{kbId}
+                <if test="kbId != null">
+                  AND ol2.kb_id = #{kbId}
+                </if>
                 AND ol2.operation_type = 5
                 AND ol2.created_at >= le.last_edit_at
           )
@@ -35,7 +43,7 @@
         LIMIT #{pageNum}, #{pageSize}
     </select>
 
-    <!-- 最近编辑文档总数（去重；隐藏仅对隐藏时点之前的编辑有效） -->
+    <!-- 最近编辑文档总数（去重；隐藏仅对隐藏时点之前的编辑有效）。kbId 可为空表示全局 -->
     <select id="countRecentEdited" resultType="long">
         SELECT COUNT(1)
         FROM (
@@ -44,17 +52,23 @@
                 SELECT ol.object_id AS doc_id, MAX(ol.created_at) AS last_edit_at
                 FROM t_operation_log ol
                 WHERE ol.operation_type = 2
+                <if test="kbId != null">
                   AND ol.kb_id = #{kbId}
+                </if>
                 GROUP BY ol.object_id
             ) le
             JOIN t_knowledge_document d ON d.id = le.doc_id
-            WHERE d.kb_id = #{kbId}
-              AND d.del_status = 0
+            WHERE d.del_status = 0
               AND d.doc_status = 1
+              <if test="kbId != null">
+                AND d.kb_id = #{kbId}
+              </if>
               AND NOT EXISTS (
                   SELECT 1 FROM t_operation_log ol2
                   WHERE ol2.object_id = d.id
-                    AND ol2.kb_id = #{kbId}
+                    <if test="kbId != null">
+                      AND ol2.kb_id = #{kbId}
+                    </if>
                     AND ol2.operation_type = 5
                     AND ol2.created_at >= le.last_edit_at
               )

@@ -1,6 +1,7 @@
 package com.serching.fulltextsearching.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -118,6 +119,12 @@ public class KnowledgeDocument {
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
+
+    /**
+     * 知识库中文名（非数据库字段，用于列表联表返回）
+     */
+    @TableField(exist = false)
+    private String kbTitle;
 
 
 }
