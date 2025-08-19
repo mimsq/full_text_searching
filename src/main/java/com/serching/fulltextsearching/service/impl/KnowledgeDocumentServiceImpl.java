@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -91,8 +92,10 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
             // 4) 提取文本内容
             String content = extractFileContent(sourceFile);
 
-            // 5) 上传到文件服务（失败会自动抛出异常）
-            FileCallResult fileServiceResult = uploadToFileService(sourceFile.toFile());
+            //5) 异步上传到文件服务
+            CompletableFuture<FileCallResult> fileServiceFuture =
+                    CompletableFuture.supplyAsync(() -> uploadToFileService(sourceFile.toFile()));
+
 
             // 6) 上传到 Dify 知识库（失败会自动抛出异常）
             String difyDocumentId = uploadToDify(kb, sourceFile);
