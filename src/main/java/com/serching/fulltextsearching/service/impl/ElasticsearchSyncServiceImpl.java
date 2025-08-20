@@ -84,4 +84,14 @@ public class ElasticsearchSyncServiceImpl implements ElasticsearchSyncService {
             throw new RuntimeException("ES 搜索失败: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public EsSearchResult searchDocumentIdsByKbId(String keyword, Long kbId, int page, int size) {
+        try {
+            return elasticsearchClient.searchDocumentsByKbId(keyword, kbId, page, size);
+        } catch (Exception e) {
+            log.error("ES 知识库搜索失败: keyword={}, kbId={}, error={}", keyword, kbId, e.getMessage(), e);
+            throw new RuntimeException("ES 知识库搜索失败: " + e.getMessage(), e);
+        }
+    }
 }

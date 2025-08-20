@@ -36,6 +36,11 @@ public interface KnowledgeDocumentService extends IService<KnowledgeDocument> {
      */
     PageResult<KnowledgeDocument> search(String keyword, int page, int size);
 
+    /**
+     * 从 Elasticsearch 全文检索指定知识库下的文档
+     */
+    PageResult<KnowledgeDocument> searchByKbId(String keyword, Long kbId, int page, int size);
+
 	/**
 	 * 最近编辑分页
 	 */

@@ -12,12 +12,16 @@ import org.springframework.data.elasticsearch.annotations.Document;
 @NoArgsConstructor
 public class ESKnowledgeDocument {
 
-
     @Id
     private String id;
 
     private String title;
 
     private String content;
+
+    /**
+     * 知识库ID，用于过滤查询
+     */
+    private Long kbId;
 
 }

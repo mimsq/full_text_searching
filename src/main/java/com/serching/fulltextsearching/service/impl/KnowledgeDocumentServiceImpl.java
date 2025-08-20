@@ -367,7 +367,8 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
             ESKnowledgeDocument esDocument = new ESKnowledgeDocument(
                     doc.getId().toString(),
                     doc.getTitle(),
-                    content
+                    content,
+                    doc.getKbId()
             );
 
             boolean syncResult = elasticsearchSyncService.syncDocumentToEs(esDocument);
@@ -546,7 +547,7 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
 
             //ES同步
             try{
-                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(knowledgeDocument.getId()+"", knowledgeDocument.getTitle(), knowledgeDocument.getContent());
+                ESKnowledgeDocument esDocument = new ESKnowledgeDocument(knowledgeDocument.getId()+"", knowledgeDocument.getTitle(), knowledgeDocument.getContent(), knowledgeDocument.getKbId());
                 elasticsearchSyncService.syncDocumentToEs(esDocument);
             }catch (Exception e){
                 throw new RuntimeException("文档更新到ES失败:"+e.getMessage(),e);
@@ -659,6 +660,53 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
 
         List<Long> ids = idStrs.stream().map(Long::valueOf).collect(Collectors.toList());
         List<KnowledgeDocument> list = this.list(new QueryWrapper<KnowledgeDocument>().in("id", ids));
+        Map<Long, KnowledgeDocument> map = list.stream().collect(Collectors.toMap(KnowledgeDocument::getId, Function.identity()));
+        List<KnowledgeDocument> ordered = ids.stream().map(map::get).filter(Objects::nonNull).collect(Collectors.toList());
+
+        long total = es.getTotal();
+        long pages = size > 0 ? (total + size - 1) / size : 0;
+
+        PageResult<KnowledgeDocument> pr = new PageResult<>();
+        pr.setRecords(ordered);
+        pr.setTotal(total);
+        pr.setSize(size);
+        pr.setCurrent(page);
+        pr.setPages(pages);
+        return pr;
+    }
+
+
+
+    @Override
+    public PageResult<KnowledgeDocument> searchByKbId(String keyword, Long kbId, int page, int size) {
+        if (keyword == null || keyword.isEmpty()) {
+            throw new BusinessException(400, "keyword 不能为空");
+        }
+        if (kbId == null) {
+            throw new BusinessException(400, "kbId 不能为空");
+        }
+        
+        // 使用ES查询指定知识库下的文档
+        EsSearchResult es = elasticsearchSyncService.searchDocumentIdsByKbId(keyword, kbId, page, size);
+        List<String> idStrs = es.getIds();
+
+        if (idStrs == null || idStrs.isEmpty()) {
+            PageResult<KnowledgeDocument> pr = new PageResult<>();
+            pr.setRecords(Collections.emptyList());
+            pr.setTotal(0);
+            pr.setSize(size);
+            pr.setCurrent(page);
+            pr.setPages(0);
+            return pr;
+        }
+
+        // 从MySQL查询文档详情，并确保只返回指定知识库的文档
+        List<Long> ids = idStrs.stream().map(Long::valueOf).collect(Collectors.toList());
+        List<KnowledgeDocument> list = this.list(new QueryWrapper<KnowledgeDocument>()
+                .in("id", ids)
+                .eq("kb_id", kbId) // 双重保险：确保只返回指定知识库的文档
+        );
+        
         Map<Long, KnowledgeDocument> map = list.stream().collect(Collectors.toMap(KnowledgeDocument::getId, Function.identity()));
         List<KnowledgeDocument> ordered = ids.stream().map(map::get).filter(Objects::nonNull).collect(Collectors.toList());
 
@@ -870,7 +918,8 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
                 ESKnowledgeDocument esDocument = new ESKnowledgeDocument(
                     document.getId().toString(),
                     document.getTitle(),
-                    document.getContent()
+                    document.getContent(),
+                    document.getKbId()
                 );
                 boolean esSyncResult = elasticsearchSyncService.syncDocumentToEs(esDocument);
                 if (esSyncResult) {

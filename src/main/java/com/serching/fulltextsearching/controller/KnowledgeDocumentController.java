@@ -177,6 +177,34 @@ public class KnowledgeDocumentController {
         return Result.success(knowledgeDocumentService.search(keyword, page, size));
     }
 
+    /**
+     * 知识库全文检索接口，使用Elasticsearch实现指定知识库下的文档全文检索
+     * 支持关键词分词匹配、高亮显示和分页查询
+     *
+     * @param keyword 检索关键词，支持中文分词和模糊匹配
+     * @param kbId 知识库ID，用于过滤指定知识库下的文档
+     * @param page 页码，从1开始，默认值为1
+     * @param size 每页条数，默认值为10
+     * @return 包含分页文档列表的Result对象
+     * @see KnowledgeDocumentService#searchByKbId(String, Long, int, int)
+     */
+    @GetMapping("/search/kb")
+    @Operation(summary = "知识库全文检索", description = "在指定知识库下进行全文检索")
+    public Result<PageResult<KnowledgeDocument>> searchByKbId(
+            @Parameter(description = "检索关键词", required = true)
+            @RequestParam String keyword,
+            @Parameter(description = "知识库ID", required = true)
+            @RequestParam Long kbId,
+            @Parameter(description = "页码，从1开始")
+            @RequestParam(defaultValue = "1")
+            @NotNull(message = "当前页不能为空") int page,
+            @Parameter(description = "每页条数")
+            @RequestParam(defaultValue = "10")
+            @NotNull(message = "每页大小不能为空") int size
+    ) {
+        return Result.success(knowledgeDocumentService.searchByKbId(keyword, kbId, page, size));
+    }
+
     @GetMapping("/recent-edited")
     @Operation(summary = "最近编辑文档", description = "基于操作日志聚合，按最近编辑时间倒序返回文档列表；knowledgeId 可选，不传则查询全部知识库")
     public Result<PageResult<KnowledgeDocument>> recentEdited(

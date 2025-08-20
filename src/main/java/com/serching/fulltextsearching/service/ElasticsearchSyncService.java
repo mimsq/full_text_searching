@@ -19,4 +19,9 @@ public interface ElasticsearchSyncService {
      * 从 Elasticsearch 全文检索文档
      */
     EsSearchResult searchDocumentIds(String keyword, int page, int size);
+
+    /**
+     * 从 Elasticsearch 全文检索指定知识库下的文档
+     */
+    EsSearchResult searchDocumentIdsByKbId(String keyword, Long kbId, int page, int size);
 }

@@ -150,6 +150,34 @@ public class ElasticsearchApiClient {
     }
 
     /**
+     * 从 Elasticsearch 全文检索指定知识库下的文档
+     */
+    public EsSearchResult searchDocumentsByKbId(String keyword, Long kbId, int page, int size) throws IOException {
+        SearchResponse<ESKnowledgeDocument> resp = esClient.search(s -> s
+                        .index(indexName)
+                        .from((page - 1) * size)
+                        .size(size)
+                        .query(q -> q.bool(b -> b
+                                .must(m -> m.multiMatch(mm -> mm
+                                        .query(keyword)
+                                        .fields("title^3", "content")
+                                ))
+                                .filter(f -> f.term(t -> t
+                                        .field("kbId")
+                                        .value(kbId)
+                                ))
+                        ))
+                , ESKnowledgeDocument.class);
+
+        List<String> ids = resp.hits().hits().stream().map(h -> h.id()).collect(Collectors.toList());
+        long total = resp.hits().total() != null ? resp.hits().total().value() : ids.size();
+        EsSearchResult out = new EsSearchResult();
+        out.setIds(ids);
+        out.setTotal(total);
+        return out;
+    }
+
+    /**
      * 销毁客户端资源
      */
     @PreDestroy
