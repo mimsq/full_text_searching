@@ -28,9 +28,9 @@ public class RecycleBinController {
     @PostMapping("/move/{documentId}")
     @ApiOperation(value = "将文档移动到回收站",notes = "将指定文档移动到回收站，用户可以从回收站恢复文档")
     public Result<Boolean> moveToRecycleBin(
-            @ApiParam(value = "文档ID", required = true) @PathVariable Long documentId,
-            @ApiParam(value = "操作用户ID", required = true) @RequestParam Long userId) {
+            @ApiParam(value = "文档ID", required = true) @PathVariable Long documentId) {
         
+        Long userId = getCurrentUserId();
         logger.info("接收到移动文档到回收站请求，文档ID: {}, 用户ID: {}", documentId, userId);
         
         try {
@@ -49,9 +49,9 @@ public class RecycleBinController {
     @PostMapping("/restore/{documentId}")
     @ApiOperation("从回收站恢复文档")
     public Result<Boolean> restoreFromRecycleBin(
-            @ApiParam(value = "文档ID", required = true) @PathVariable Long documentId,
-            @ApiParam(value = "操作用户ID", required = true) @RequestParam Long userId) {
+            @ApiParam(value = "文档ID", required = true) @PathVariable Long documentId) {
         
+        Long userId = getCurrentUserId();
         logger.info("接收到从回收站恢复文档请求，文档ID: {}, 用户ID: {}", documentId, userId);
         
         try {
@@ -92,5 +92,12 @@ public class RecycleBinController {
                 "1. POST /api/recycle-bin/move/{documentId} - 将文档移动到回收站\n" +
                 "2. POST /api/recycle-bin/restore/{documentId} - 从回收站恢复文档\n" +
                 "3. GET /api/recycle-bin/list - 获取回收站列表");
+    }
+
+    /**
+     * 获取当前登录用户ID（占位实现，后续接入登录模块/安全上下文）
+     */
+    private Long getCurrentUserId() {
+        return 1L;
     }
 }
