@@ -9,9 +9,11 @@ import com.serching.fulltextsearching.dto.EsSearchResult;
 import com.serching.fulltextsearching.dto.FileCallResult;
 import com.serching.fulltextsearching.entity.ESKnowledgeDocument;
 import com.serching.fulltextsearching.entity.KnowledgeBase;
+import com.serching.fulltextsearching.entity.KnowledgeBaseCategory;
 import com.serching.fulltextsearching.entity.KnowledgeDocument;
 import com.serching.fulltextsearching.entity.KnowledgeFile;
 import com.serching.fulltextsearching.exception.BusinessException;
+import com.serching.fulltextsearching.mapper.KnowledgeBaseCategoryMapper;
 import com.serching.fulltextsearching.mapper.KnowledgeDocumentMapper;
 import com.serching.fulltextsearching.mapper.KnowledgeFileMapper;
 import com.serching.fulltextsearching.service.*;
@@ -65,6 +67,9 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
     @Autowired
     private KnowledgeFileService knowledgeFileService;
 
+    @Autowired
+    private KnowledgeBaseCategoryMapper knowledgeBaseCategoryMapper;
+
     /**
      * TODO，后续单独添加一个service层
      */
@@ -82,6 +87,11 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         try {
             // 1) 参数校验
             validateUploadParameters(kb, file);
+
+            // 1.1) 校验分类是否属于该知识库（当传入了分类时）
+            if (categoryId != null) {
+                validateCategoryUnderKb(kb.getId(), categoryId);
+            }
 
             // 2) 检查文件格式
             String suffix = validateFileFormat(file);
@@ -456,6 +466,13 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
             throw new BusinessException(404, "文档不存在或已被删除");
         }
 
+        // 校验分类是否属于该知识库（当传入了分类时）
+        Long newCategoryId = knowledgeDocument.getCategoryId();
+        if (newCategoryId != null) {
+            Long effectiveKbId = knowledgeDocument.getKbId() != null ? knowledgeDocument.getKbId() : existingDoc.getKbId();
+            validateCategoryUnderKb(effectiveKbId, newCategoryId);
+        }
+
         // 检查内容是否真的改变了
         boolean contentChanged = false;
         if (knowledgeDocument.getContent() != null &&
@@ -568,6 +585,28 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         return null;
     }
 
+    /**
+     * 校验分类是否存在且属于指定知识库
+     */
+    private void validateCategoryUnderKb(Long kbId, Long categoryId) {
+        if (kbId == null) {
+            throw new BusinessException(400, "知识库ID不能为空");
+        }
+        if (categoryId == null) {
+            throw new BusinessException(400, "分类ID不能为空");
+        }
+        KnowledgeBaseCategory category = knowledgeBaseCategoryMapper.selectById(categoryId);
+        if (category == null) {
+            throw new BusinessException(400, "分类不存在");
+        }
+        if (!kbId.equals(category.getKbId())) {
+            throw new BusinessException(400, "分类不属于该知识库");
+        }
+    }
+
+
+
+    //通过知识库id分页查询文档
     @Override
     public PageResult<KnowledgeDocument> pageByKbId(Long kbId, long current, long size) {
         if (kbId == null) {
@@ -945,7 +984,23 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
                 // 不抛出异常，继续执行
             }
 
-            // 5. 更新数据库状态为正常
+            // 5. 检查并处理分类问题
+            if (document.getCategoryId() != null) {
+                // 检查分类是否还存在
+                try {
+                    KnowledgeBaseCategory category = knowledgeBaseCategoryMapper.selectById(document.getCategoryId());
+                    if (category == null) {
+                        // 分类不存在，将category_id设置为null
+                        logger.info("文档 {} 的原分类 {} 不存在，将category_id设置为null", documentId, document.getCategoryId());
+                        document.setCategoryId(null);
+                    }
+                } catch (Exception e) {
+                    logger.warn("检查文档 {} 的分类 {} 时发生异常，将category_id设置为null", documentId, document.getCategoryId(), e);
+                    document.setCategoryId(null);
+                }
+            }
+
+            // 6. 更新数据库状态为正常
             document.setDelStatus(0);
             document.setUpdatedAt(LocalDateTime.now());
             document.setUpdatedBy(userId);

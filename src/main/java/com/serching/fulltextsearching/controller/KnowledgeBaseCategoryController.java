@@ -38,7 +38,7 @@ public class KnowledgeBaseCategoryController {
     }
 
     @DeleteMapping("/delete/{id}")
-    @ApiOperation("删除知识库分类")
+    @ApiOperation("删除知识库分类（同时将该分类下的所有文档移入回收站）")
     public Result<Void> deleteCategory(
             @ApiParam(value = "分类ID", required = true)
             @PathVariable @NotNull(message = "分类ID不能为空") Long id){

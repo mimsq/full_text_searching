@@ -6,6 +6,8 @@
     <select id="selectByKbId" resultType="com.serching.fulltextsearching.entity.KnowledgeDocument">
         SELECT * FROM t_knowledge_document
         WHERE kb_id = #{knowledgeBaseId}
+          AND del_status = 0
+          AND doc_status = 1
         ORDER BY category_id, id
         LIMIT #{pageNum}, #{pageSize}
     </select>
