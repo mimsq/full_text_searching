@@ -138,13 +138,17 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
      */
     private String validateFileFormat(MultipartFile file){
         String originalName = file.getOriginalFilename();
-        String suffix = (originalName != null && originalName.contains("."))
-                ? originalName.substring(originalName.lastIndexOf(".") + 1).toLowerCase()
-                : "";
-        if (!("txt".equals(suffix) || "md".equals(suffix))) {
-            throw new BusinessException(400, "目前仅支持 .txt 或 .md 文件");
+        if (originalName == null || originalName.trim().isEmpty()) {
+            throw new BusinessException(400, "文件名不能为空");
         }
-        return suffix;
+        
+        if (!documentTools.isSupportedFormat(originalName)) {
+            String[] supportedFormats = documentTools.getSupportedFormats();
+            String supportedFormatsStr = String.join("、.", supportedFormats);
+            throw new BusinessException(400, "不支持的文件格式，目前支持: ." + supportedFormatsStr);
+        }
+        
+        return documentTools.getFileExtension(originalName);
     }
 
 

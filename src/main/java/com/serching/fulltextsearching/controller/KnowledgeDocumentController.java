@@ -38,7 +38,7 @@ public class KnowledgeDocumentController {
     private OperationLogService operationLogService;
 
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
-    @Operation(summary = "上传文件创建文档(绑定知识库/可选分组)", description = "file: 仅支持 .txt/.md; knowledgeBaseId: 知识库ID; categoryId: 可选")
+    @Operation(summary = "上传文件创建文档(绑定知识库/可选分组)", description = "file: 支持 .txt/.md/.doc/.docx/.pdf; knowledgeBaseId: 知识库ID; categoryId: 可选")
     public Result<KnowledgeDocument> uploadDocument(
             @Parameter(description = "知识库ID", required = true)
             @RequestParam("knowledgeId")
@@ -47,7 +47,7 @@ public class KnowledgeDocumentController {
             @Parameter(description = "知识库分组ID(可选)")
             @RequestParam(value = "categoryId", required = false) Long categoryId,
 
-            @Parameter(description = "要上传的文件，仅支持 .txt/.md", required = true)
+            @Parameter(description = "要上传的文件，支持 .txt/.md/.doc/.docx/.pdf", required = true)
             @RequestPart("file")
             @NotNull(message = "上传文件不能为空") MultipartFile file
     )
