@@ -450,6 +450,11 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         if (existingDoc == null) {
             throw new BusinessException(404, "文档不存在");
         }
+        
+        // 检查文档是否已删除（在回收站中）
+        if (existingDoc.getDelStatus() != null && existingDoc.getDelStatus() == 1) {
+            throw new BusinessException(404, "文档不存在或已被删除");
+        }
 
         // 检查内容是否真的改变了
         boolean contentChanged = false;
@@ -663,7 +668,10 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         }
 
         List<Long> ids = idStrs.stream().map(Long::valueOf).collect(Collectors.toList());
-        List<KnowledgeDocument> list = this.list(new QueryWrapper<KnowledgeDocument>().in("id", ids));
+        List<KnowledgeDocument> list = this.list(new QueryWrapper<KnowledgeDocument>()
+                .in("id", ids)
+                .eq("del_status", 0)  // 过滤已删除的文档
+        );
         Map<Long, KnowledgeDocument> map = list.stream().collect(Collectors.toMap(KnowledgeDocument::getId, Function.identity()));
         List<KnowledgeDocument> ordered = ids.stream().map(map::get).filter(Objects::nonNull).collect(Collectors.toList());
 
@@ -709,6 +717,7 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         List<KnowledgeDocument> list = this.list(new QueryWrapper<KnowledgeDocument>()
                 .in("id", ids)
                 .eq("kb_id", kbId) // 双重保险：确保只返回指定知识库的文档
+                .eq("del_status", 0)  // 过滤已删除的文档
         );
         
         Map<Long, KnowledgeDocument> map = list.stream().collect(Collectors.toMap(KnowledgeDocument::getId, Function.identity()));

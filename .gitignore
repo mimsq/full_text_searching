@@ -87,3 +87,4 @@ application-*.properties
 #=============================#
 tmp/
 temp/
+file/upload/

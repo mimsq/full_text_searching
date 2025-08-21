@@ -107,6 +107,10 @@ public class KnowledgeDocumentController {
         if (document == null) {
             throw new BusinessException(404, "文档不存在");
         }
+        // 检查文档是否已删除（在回收站中）
+        if (document.getDelStatus() != null && document.getDelStatus() == 1) {
+            throw new BusinessException(404, "文档不存在或已被删除");
+        }
         // 记录预览操作日志（operationType=4）
         try {
             operationLogService.addOperationLog(4, id, document.getKbId(), 1L);
