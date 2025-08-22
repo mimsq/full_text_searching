@@ -16,12 +16,19 @@ import java.io.File;
 public class WebConfig implements WebMvcConfigurer {
     // Spring Boot 2.x 默认支持文件上传，无需额外配置
 
+    @Value("${file.upload.permanent-dir}")
+    private String permanentDir;
+
     @Value("${file.upload.image}")
     private String imageDir;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 将/api/covers/** 映射到实际存储目录
+        // 将/api/files/** 映射到永久存储目录
+        registry.addResourceHandler("/api/files/**")
+                .addResourceLocations("file:" + permanentDir + File.separator);
+
+        // 将/api/covers/** 映射到图片目录（如封面图、图片上传专用目录）
         registry.addResourceHandler("/api/covers/**")
                 .addResourceLocations("file:" + imageDir + File.separator);
     }

@@ -324,7 +324,7 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
         try {
             KnowledgeFile knowledgeFile = knowledgeFileService.saveFileInfo(
                     file,
-                    sourceFile.getParent().toString(),
+                    sourceFile.toString(),
                     1L // 默认userId后续对接user模块后实现真正的获取
             );
             logger.info("文件信息保存成功，文件ID: {}", knowledgeFile.getId());
@@ -353,6 +353,8 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
             doc.setDelStatus(0);
             doc.setDocType(0);
             doc.setFileId(knowledgeFile.getId());
+            // 对外可访问地址，基于静态资源映射 /api/files/**
+            doc.setPreviewInfo("/api/files/" + originalName);
             doc.setDifyDocumentId(difyDocumentId);
             doc.setCreatedAt(LocalDateTime.now());
             doc.setUpdatedAt(LocalDateTime.now());
