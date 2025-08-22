@@ -91,7 +91,36 @@ public class RecycleBinController {
         return Result.success("回收站功能已实现，包含以下接口：\n" +
                 "1. POST /api/recycle-bin/move/{documentId} - 将文档移动到回收站\n" +
                 "2. POST /api/recycle-bin/restore/{documentId} - 从回收站恢复文档\n" +
-                "3. GET /api/recycle-bin/list - 获取回收站列表");
+                "3. GET /api/recycle-bin/list - 获取回收站列表\n" +
+                "4. GET /api/recycle-bin/deleted-time/{documentId} - 查询文档移入回收站时间");
+    }
+
+    @GetMapping("/deleted-time/{documentId}")
+    @ApiOperation("查询文档移入回收站时间")
+    public Result<String> getDeletedTime(
+            @ApiParam(value = "文档ID", required = true) @PathVariable Long documentId) {
+        
+        logger.info("接收到查询文档移入回收站时间请求，文档ID: {}", documentId);
+        
+        try {
+            KnowledgeDocument document = knowledgeDocumentService.getById(documentId);
+            if (document == null) {
+                return Result.error("文档不存在");
+            }
+            
+            if (document.getDelStatus() == null || document.getDelStatus() != 1) {
+                return Result.error("文档不在回收站中");
+            }
+            
+            if (document.getDeletedAt() == null) {
+                return Result.success("文档已移入回收站，但未记录具体时间");
+            }
+            
+            return Result.success("文档移入回收站时间: " + document.getDeletedAt());
+        } catch (Exception e) {
+            logger.error("查询文档移入回收站时间异常，文档ID: {}", documentId, e);
+            return Result.error("查询失败: " + e.getMessage());
+        }
     }
 
     /**

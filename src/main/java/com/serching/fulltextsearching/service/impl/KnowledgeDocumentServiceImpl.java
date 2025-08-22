@@ -906,8 +906,9 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
                 // 不抛出异常，继续执行
             }
 
-            // 5. 更新数据库状态为已删除
+            // 5. 更新数据库状态为已删除，并记录移入回收站时间
             document.setDelStatus(1);
+            document.setDeletedAt(LocalDateTime.now());
             document.setUpdatedAt(LocalDateTime.now());
             document.setUpdatedBy(userId);
             
@@ -1002,8 +1003,9 @@ public class KnowledgeDocumentServiceImpl extends ServiceImpl<KnowledgeDocumentM
                 }
             }
 
-            // 6. 更新数据库状态为正常
+            // 6. 更新数据库状态为正常，并清除移入回收站时间
             document.setDelStatus(0);
+            document.setDeletedAt(null);
             document.setUpdatedAt(LocalDateTime.now());
             document.setUpdatedBy(userId);
             

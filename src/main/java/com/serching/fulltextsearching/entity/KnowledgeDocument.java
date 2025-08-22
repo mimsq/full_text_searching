@@ -121,6 +121,12 @@ public class KnowledgeDocument {
     private LocalDateTime updatedAt;
 
     /**
+     * 移入回收站时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime deletedAt;
+
+    /**
      * 知识库中文名（非数据库字段，用于列表联表返回）
      */
     @TableField(exist = false)
