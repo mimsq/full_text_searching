@@ -1,6 +1,8 @@
 package com.serching.fulltextsearching.controller;
 
 import com.serching.fulltextsearching.common.Result;
+import com.serching.fulltextsearching.dto.CreateCategoryRequest;
+import com.serching.fulltextsearching.dto.UpdateCategoryRequest;
 import com.serching.fulltextsearching.service.KnowledgeBaseCategoryService;
 import com.serching.fulltextsearching.vo.DocumentGroupVo;
 import io.swagger.annotations.Api;
@@ -24,13 +26,9 @@ public class KnowledgeBaseCategoryController {
 
     @PostMapping("/create")
     @ApiOperation("创建知识库分类") // 接口描述
-    public Result<Void> createCategory(
-            @ApiParam(value = "分类名称", required = true) // 参数说明
-            @RequestParam @NotBlank(message = "分类名称不能为空") String name,
-            @ApiParam(value = "知识库ID", required = true)
-            @RequestParam @NotNull(message = "知识库ID不能为空") Long knowledgeBaseId){
+    public Result<Void> createCategory(@RequestBody @Validated CreateCategoryRequest request) {
         try {
-            knowledgeBaseCategoryService.createCategory(name, knowledgeBaseId);
+            knowledgeBaseCategoryService.createCategory(request.getName(), request.getKnowledgeBaseId());
             return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -55,10 +53,9 @@ public class KnowledgeBaseCategoryController {
     public Result<Void> updateCategory(
             @ApiParam(value = "分类ID", required = true)
             @PathVariable @NotNull(message = "分类ID不能为空") Long id,
-            @ApiParam(value = "新分类名称", required = true)
-            @RequestParam @NotBlank(message = "分类名称不能为空") String name){
+            @RequestBody @Validated UpdateCategoryRequest request){
         try {
-            knowledgeBaseCategoryService.updateCategory(id, name);
+            knowledgeBaseCategoryService.updateCategory(id, request.getName());
             return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
