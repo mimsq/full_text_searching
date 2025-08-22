@@ -5,6 +5,7 @@ import com.serching.fulltextsearching.common.Result;
 import com.serching.fulltextsearching.entity.KnowledgeBase;
 import com.serching.fulltextsearching.exception.BusinessException;
 import com.serching.fulltextsearching.service.KnowledgeBaseService;
+import lombok.extern.slf4j.Slf4j;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -24,6 +25,7 @@ import java.util.Map;
 @RequestMapping("/api/knowledge")
 @Validated
 @Api(tags = "知识库管理接口")
+@Slf4j
 public class KnowledgeBaseController {
 
     @Autowired
@@ -171,27 +173,37 @@ public class KnowledgeBaseController {
     }
 
 
-    //上传封面图片接口
+    /** 
+     * 上传封面图片接口
+     * @param file 封面图片文件
+     * @return 封面图片路径
+     */
     @PostMapping(value = "/cover/upload",consumes = "multipart/form-data")
     @ApiOperation("上传知识库封面图片")
     public Result<Map<String,String>> uploadCoverImage(
             @ApiParam(value = "封面图片文件", required = true)
-            @RequestPart("file")MultipartFile file){
+            @RequestParam("file") MultipartFile file){
         try{
+            // 0.调试日志
+            String originalFilename = file != null ? file.getOriginalFilename() : null;
+            Long size = file != null ? file.getSize() : null;
+            String contentType = file != null ? file.getContentType() : null;
+            log.info("[uploadCoverImage] recv file: name={}, size={}, contentType={}", originalFilename, size, contentType);
             //1.基础验证
             if (file.isEmpty()){
                 return Result.error("上传文件不能为空");
             }
 
-            if (!file.getContentType().startsWith("image/")){
-                return Result.error("请上传图片类型文件");
+            if (file.getContentType() == null || !file.getContentType().startsWith("image/")){
+                return Result.error("请上传图片文件");
             }
             if (file.getSize() > 1024 * 1024){
-                return Result.error("图片不能超过1MB");
+                return Result.error("图片大小不能超过 1MB");
             }
 
             //2.调用业务层处理业务逻辑
             String imagePath = knowledgeService.uploadCoverImage(file);
+            log.info("[uploadCoverImage] saved imagePath={}", imagePath);
 
             //3.构建响应
             Map<String,String> result = new HashMap<>(1);
@@ -199,9 +211,11 @@ public class KnowledgeBaseController {
             return Result.success(result);
 
         }catch (BusinessException e){
+            log.warn("[uploadCoverImage] business error: {}", e.getMessage(), e);
             return Result.error(e.getMessage());
         }catch (Exception e){
-            return Result.error("系统异常，请稍后重试");
+            log.error("[uploadCoverImage] system error: {}", e.getMessage(), e);
+            return Result.error("系统异常，请稍后再试");
         }
     }
 

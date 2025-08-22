@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     @Autowired
@@ -181,17 +183,32 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         //1.确保上传目录存在
         File dir = new File(imageDir);
         if (!dir.exists() && !dir.mkdirs()){
-            throw new BusinessException("目录不存在且无法创建");
+            throw new BusinessException("图片保存目录不存在且无法自动创建，请联系管理员");
         }
 
         //2.生成唯一文件名
         String originalFilename = file.getOriginalFilename();
-        String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String suffix = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
+        } else if (file.getContentType() != null && file.getContentType().startsWith("image/")) {
+            // fallback by content type
+            suffix = "." + file.getContentType().substring("image/".length());
+        } else {
+            suffix = ".img";
+        }
         String fileName = "cover_" + UUID.randomUUID()+suffix;
 
         //3.保存文件
-        File dest = new File(dir,fileName);
-        file.transferTo(dest);
+        try {
+            File dest = new File(dir, fileName);
+            log.info("[uploadCoverImage] save to: {} (existsDir={})", dest.getAbsolutePath(), dir.exists());
+            file.transferTo(dest);
+            log.info("[uploadCoverImage] saved ok: {} bytes", dest.length());
+        } catch (IOException ioe) {
+            log.error("[uploadCoverImage] save failed: {}", ioe.getMessage(), ioe);
+            throw new BusinessException("图片保存失败，请稍后再试");
+        }
 
         //4.构建访问路径
         return "/api/covers/"+fileName;
